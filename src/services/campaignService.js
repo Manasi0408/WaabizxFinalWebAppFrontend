@@ -119,7 +119,9 @@ export const getCampaignById = async (campaignId) => {
         sent: campaignData.stats?.sent || campaignData.sent || 0,
         delivered: campaignData.stats?.delivered || campaignData.delivered || 0,
         read: campaignData.stats?.read || campaignData.read || 0,
-        failed: campaignData.stats?.failed || campaignData.failed || 0
+        failed: campaignData.stats?.failed || campaignData.failed || 0,
+        audience: campaignData.audience ?? campaignData.totalRecipients ?? campaignData.stats?.total ?? 0,
+        totalCreditUsage: campaignData.totalCreditUsage ?? 0
       };
     }
 

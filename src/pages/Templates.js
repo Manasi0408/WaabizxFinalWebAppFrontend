@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import BrandLogoMark from '../components/BrandLogoMark';
 import { useNavigate, Link } from 'react-router-dom';
-import { getProfile, isAuthenticated, logout } from '../services/authService';
+import { getProfile, isAuthenticated, logout, readSessionUser } from '../services/authService';
 import { getNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import {
   getTemplates,
@@ -12,10 +13,13 @@ import {
   getMetaTemplates
 } from '../services/templateService';
 import MainSidebarNav from '../components/MainSidebarNav';
+import AppShellSidebar from '../components/AppShellSidebar';
+import AdminHeaderProjectSwitch from '../components/AdminHeaderProjectSwitch';
+import HeaderRightActions from '../components/HeaderRightActions';
 
 function Templates() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -122,18 +126,26 @@ function Templates() {
       const result = await getTemplates(filters);
       setTemplates(result.templates || []);
       setPagination(result.pagination || {});
+      setError('');
     } catch (error) {
       console.error('Error fetching templates:', error);
-      setError('Failed to load templates');
+      const msg = String(error?.message || '');
+      if (/project is required/i.test(msg)) {
+        setTemplates([]);
+        setError('');
+      } else {
+        setError(msg || 'Failed to load templates');
+      }
     } finally {
       setLoadingTemplates(false);
     }
   };
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      fetchTemplates();
-    }
+    if (!isAuthenticated()) return;
+    fetchTemplates();
+    const retryTimer = setTimeout(fetchTemplates, 350);
+    return () => clearTimeout(retryTimer);
   }, [filters]);
 
   // Close dropdowns when clicking outside
@@ -393,6 +405,7 @@ function Templates() {
 
   const userName = user?.name || 'User';
   const userInitial = userName.charAt(0).toUpperCase();
+  const headerAvatar = user?.avatar || readSessionUser()?.avatar || '';
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
@@ -409,10 +422,7 @@ function Templates() {
             </svg>
           </button>
 
-          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 ring-2 ring-white">
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
+          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"><BrandLogoMark size="md" />
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent hidden sm:block">
               Waabizx
             </h1>
@@ -420,9 +430,10 @@ function Templates() {
 
           <span className="text-gray-300 hidden md:block">|</span>
           <h2 className="text-lg font-semibold text-sky-700 hidden md:block tracking-tight">Templates</h2>
+          <AdminHeaderProjectSwitch />
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4">
+        <HeaderRightActions>
           <div className="relative" ref={notificationRef}>
             <button
               type="button"
@@ -561,18 +572,22 @@ function Templates() {
           <button
             type="button"
             onClick={() => navigate('/settings')}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none overflow-hidden"
           >
-            <span className="text-white font-semibold text-sm">{userInitial}</span>
+            {headerAvatar ? (
+              <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-semibold text-sm">{userInitial}</span>
+            )}
           </button>
-        </div>
+        </HeaderRightActions>
       </header>
 
       <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
-        <aside className={`bg-sky-950 text-white border-r border-sky-900 h-full shrink-0 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'w-20' : 'w-0 md:w-20'}`}>
-          <MainSidebarNav />
-        </aside>
+        <AppShellSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+          <MainSidebarNav onNavigate={() => setSidebarOpen(false)} />
+        </AppShellSidebar>
 
         {/* Main Content */}
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">

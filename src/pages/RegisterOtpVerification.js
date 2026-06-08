@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
+import BrandLogoMark, { BrandLogoWatermark } from '../components/BrandLogoMark';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { resendRegisterOtp, verifyRegisterOtp } from '../services/authService';
+import ThemeToggle from '../components/ThemeToggle';
 
 const inputClass =
   'w-full rounded-xl border-2 border-gray-200/90 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition-all placeholder:text-gray-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-500/10 sm:py-3';
 
 const AUTH_MARQUEE_TAGS = [
   'Waabizx',
-  'WhatsApp OTP',
+  'Email OTP',
   'Verification',
   'Secure Login',
   'Templates',
@@ -20,7 +22,7 @@ function RegisterOtpVerification() {
   const location = useLocation();
   const email = useMemo(() => String(location.state?.email || '').trim().toLowerCase(), [location.state]);
   const mobileNumber = useMemo(() => String(location.state?.mobileNumber || '').trim(), [location.state]);
-  const initialTimer = Number(location.state?.otpExpiresInSeconds || 50);
+  const initialTimer = Number(location.state?.otpExpiresInSeconds || 600);
 
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -64,7 +66,7 @@ function RegisterOtpVerification() {
     try {
       const response = await resendRegisterOtp(email);
       if (response.success) {
-        setTimer(Number(response.expiresInSeconds || 50));
+        setTimer(Number(response.expiresInSeconds || 600));
       }
     } catch (err) {
       setError(err.message || 'Failed to resend OTP');
@@ -75,6 +77,9 @@ function RegisterOtpVerification() {
 
   return (
     <div className="fixed inset-0 z-[1] flex flex-col overflow-hidden overscroll-none bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div className="absolute -right-24 -top-32 h-[28rem] w-[28rem] rounded-full bg-sky-400/25 blur-3xl" />
         <div className="absolute -left-32 top-1/3 h-[22rem] w-[22rem] rounded-full bg-blue-500/15 blur-3xl" />
@@ -96,17 +101,18 @@ function RegisterOtpVerification() {
             className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:56px_56px]"
             aria-hidden
           />
-          <span
-            className="pointer-events-none absolute bottom-8 right-2 select-none text-[11rem] font-black leading-none text-white/[0.04] xl:text-[13rem]"
-            aria-hidden
-          >
-            W
-          </span>
+          <BrandLogoWatermark className="absolute bottom-6 right-0 h-44 w-auto xl:h-52" />
 
           <div className="relative z-10 flex h-full min-h-0 flex-col overflow-hidden px-8 py-8 text-white shadow-2xl shadow-black/20 xl:px-11 xl:py-10">
             <header className="flex shrink-0 items-center gap-3.5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/12 text-lg font-bold ring-1 ring-white/25 backdrop-blur-md">
-                W
+              <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center xl:h-[58px] xl:w-[58px]">
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
+                  <div className="auth-logo-orbit-ring h-[52px] w-[52px] rounded-full border-2 border-white/10 border-t-sky-300/80 border-r-sky-400/35 xl:h-[58px] xl:w-[58px]" />
+                </div>
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-70" aria-hidden>
+                  <div className="auth-logo-orbit-ring--reverse h-[44px] w-[44px] rounded-full border border-dashed border-white/30 xl:h-[50px] xl:w-[50px]" />
+                </div>
+                <BrandLogoMark size="lg" className="auth-brand-logo-pulse relative z-10" />
               </div>
               <div className="min-w-0">
                 <p className="text-base font-bold tracking-tight xl:text-lg">Waabizx</p>
@@ -135,7 +141,7 @@ function RegisterOtpVerification() {
                 Secure verification
               </p>
               <h2 className="text-3xl font-bold leading-tight tracking-tight">
-                Confirm your account with WhatsApp OTP
+                Confirm your account with email OTP
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-sky-100/88">
                 Fast and secure verification before login. Your code is time-bound for safety.
@@ -148,10 +154,11 @@ function RegisterOtpVerification() {
           <div className="w-full max-w-md rounded-2xl border border-gray-100/90 bg-white/95 p-5 shadow-xl shadow-sky-900/[0.06] ring-1 ring-gray-100/80 backdrop-blur-sm sm:p-6">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600/90">Verify OTP</p>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              Confirm WhatsApp OTP
+              Confirm email OTP
             </h1>
             <p className="mt-2 text-sm text-gray-600">
-              Enter the OTP sent to <span className="font-semibold text-gray-800">{mobileNumber || 'your WhatsApp number'}</span>.
+              Enter the OTP sent to{' '}
+              <span className="font-semibold text-gray-800">{email || 'your email address'}</span>.
             </p>
 
             {error && (

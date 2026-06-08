@@ -1,6 +1,27 @@
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const API_URL = `${API_BASE.replace(/\/$/, "")}/api`;
 
+const USER_STORAGE_KEY = 'user';
+
+/** Cached user from login / profile (used for header avatar when in-memory `user` is stale). */
+export const readSessionUser = () => {
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const persistSessionUser = (user) => {
+  if (!user || typeof user !== 'object') return;
+  try {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  } catch (_) {
+    /* quota or private mode */
+  }
+};
+
 // Get token from localStorage
 const getToken = () => {
   return localStorage.getItem('token');
@@ -36,7 +57,6 @@ export const register = async (name, email, password, mobileNumber) => {
     }
 
     if (data.success) {
-      // Do not auto-login; user will sign in from login page
       return data;
     }
 
@@ -80,7 +100,7 @@ export const resendRegisterOtp = async (email) => {
   return data;
 };
 
-// Request password reset OTP (sent on WhatsApp)
+// Request password reset OTP (sent to email)
 export const requestPasswordReset = async (email) => {
   const headers = { 'Content-Type': 'application/json' };
   if (API_BASE && API_BASE.includes('ngrok')) {
@@ -192,6 +212,7 @@ export const getProfile = async () => {
     }
 
     if (data.success && data.user) {
+      persistSessionUser(data.user);
       return data.user;
     }
 
@@ -227,6 +248,7 @@ export const updateProfile = async (payload) => {
   }
 
   if (data.success && data.user) {
+    persistSessionUser(data.user);
     return data;
   }
 

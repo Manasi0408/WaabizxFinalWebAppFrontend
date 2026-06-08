@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
+import BrandLogoMark from '../components/BrandLogoMark';
 import { useNavigate, Link } from 'react-router-dom';
-import { getProfile, isAuthenticated, logout, updateProfile } from '../services/authService';
+import { getProfile, isAuthenticated, logout, updateProfile, readSessionUser } from '../services/authService';
 import { getSettings } from '../services/settingsService';
 import { getNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import MainSidebarNav from '../components/MainSidebarNav';
+import AppShellSidebar from '../components/AppShellSidebar';
+import AdminHeaderProjectSwitch from '../components/AdminHeaderProjectSwitch';
+import HeaderRightActions from '../components/HeaderRightActions';
 
 function Settings() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -26,12 +30,24 @@ function Settings() {
     whatsappNumber: '',
     userName: ''
   });
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [avatarDirty, setAvatarDirty] = useState(false);
+  const photoInputRef = useRef(null);
 
   const [settings, setSettings] = useState({
     whatsappNumber: '',
     adminName: '',
     adminEmail: ''
   });
+
+  const splitRegistrationMobile = (mobileNumber) => {
+    const digits = String(mobileNumber || '').replace(/\D/g, '');
+    if (!digits) return null;
+    if (digits.length === 10) {
+      return splitWhatsappNumber(`+91${digits}`);
+    }
+    return splitWhatsappNumber(digits.startsWith('+') ? digits : `+${digits}`);
+  };
 
   const splitWhatsappNumber = (rawValue) => {
     const cleaned = String(rawValue || '').replace(/\s+/g, '');
@@ -75,8 +91,12 @@ function Settings() {
           });
         }
 
-        const whatsappSource = settingsData?.whatsappNumber || '';
-        const splitNumber = splitWhatsappNumber(whatsappSource);
+        const regSplit = splitRegistrationMobile(userData?.mobileNumber);
+        const settingsSplit =
+          settingsData?.whatsappNumber && String(settingsData.whatsappNumber).trim()
+            ? splitWhatsappNumber(settingsData.whatsappNumber)
+            : null;
+        const splitNumber = regSplit || settingsSplit || splitWhatsappNumber('');
         const resolvedEmail = userData?.email || settingsData?.adminEmail || '';
         setProfileForm({
           displayName: userData?.name || settingsData?.adminName || '',
@@ -85,6 +105,8 @@ function Settings() {
           whatsappNumber: splitNumber.whatsappNumber,
           userName: resolvedEmail
         });
+        setAvatarPreview(userData?.avatar || '');
+        setAvatarDirty(false);
       } catch (error) {
         console.error('Error fetching data:', error);
         setLoadError('Failed to load profile');
@@ -171,7 +193,12 @@ function Settings() {
   };
 
   const handleProfileCancel = () => {
-    const restoredWhatsApp = splitWhatsappNumber(settings.whatsappNumber || '');
+    const regSplit = splitRegistrationMobile(user?.mobileNumber);
+    const settingsSplit =
+      settings.whatsappNumber && String(settings.whatsappNumber).trim()
+        ? splitWhatsappNumber(settings.whatsappNumber)
+        : null;
+    const restoredWhatsApp = regSplit || settingsSplit || splitWhatsappNumber('');
     const restoredEmail = user?.email || settings.adminEmail || '';
     setProfileForm({
       displayName: user?.name || settings.adminName || '',
@@ -180,9 +207,32 @@ function Settings() {
       whatsappNumber: restoredWhatsApp.whatsappNumber,
       userName: restoredEmail
     });
+    setAvatarPreview(user?.avatar || '');
+    setAvatarDirty(false);
+    if (photoInputRef.current) photoInputRef.current.value = '';
     setIsProfileEditing(false);
     setProfileError('');
     setProfileSuccess('');
+  };
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setProfileError('Please select an image file (JPG, PNG, or WebP).');
+      return;
+    }
+    if (file.size > 512000) {
+      setProfileError('Image must be smaller than 500KB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarPreview(String(reader.result || ''));
+      setAvatarDirty(true);
+      setProfileError('');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleProfileSave = async () => {
@@ -191,29 +241,36 @@ function Settings() {
     setProfileSaving(true);
 
     try {
-      const response = await updateProfile({
+      const payload = {
         displayName: profileForm.displayName,
         email: profileForm.email,
         countryCode: profileForm.countryCode,
         whatsappNumber: profileForm.whatsappNumber
-      });
+      };
+      if (avatarDirty && avatarPreview) {
+        payload.avatar = avatarPreview;
+      }
+      await updateProfile(payload);
 
-      const nextUser = response?.user || {};
-      setUser(nextUser);
+      const fresh = await getProfile();
+      setUser(fresh);
       setSettings((prev) => ({
         ...prev,
-        adminName: nextUser?.name || prev.adminName,
-        adminEmail: nextUser?.email || prev.adminEmail,
+        adminName: fresh?.name || prev.adminName,
+        adminEmail: fresh?.email || prev.adminEmail,
         whatsappNumber: `${profileForm.countryCode}${profileForm.whatsappNumber}`.replace(/\s+/g, '')
       }));
 
       setProfileForm((prev) => ({
         ...prev,
-        displayName: nextUser?.name || prev.displayName,
-        email: nextUser?.email || prev.email,
-        userName: nextUser?.email || prev.userName
+        displayName: fresh?.name || prev.displayName,
+        email: fresh?.email || prev.email,
+        userName: fresh?.email || prev.userName
       }));
 
+      setAvatarPreview(fresh?.avatar || '');
+      setAvatarDirty(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
       setProfileSuccess('Profile updated successfully!');
       setIsProfileEditing(false);
       setTimeout(() => setProfileSuccess(''), 3000);
@@ -260,26 +317,28 @@ function Settings() {
 
   const userName = user?.name || 'User';
   const userInitial = userName.charAt(0).toUpperCase();
+  const headerAvatar = user?.avatar || readSessionUser()?.avatar || '';
+  const sessionRole = String(localStorage.getItem('role') || user?.role || '').toLowerCase().trim();
+  const isSuperAdmin = sessionRole === 'super_admin' || sessionRole === 'superadmin';
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       <header className="motion-header-enter shrink-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-200/80 px-4 md:px-8 py-3.5 md:py-4 flex justify-between items-center shadow-sm shadow-gray-200/50">
         <div className="flex items-center gap-4 min-w-0">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2.5 rounded-xl hover:bg-gray-100/80 active:scale-95 transition lg:hidden"
-            aria-label="Toggle sidebar"
-          >
-            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {!isSuperAdmin && (
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2.5 rounded-xl hover:bg-gray-100/80 active:scale-95 transition lg:hidden"
+              aria-label="Toggle sidebar"
+            >
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          )}
 
-          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 ring-2 ring-white">
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
+          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shrink-0"><BrandLogoMark size="md" />
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent hidden sm:block">
               Waabizx
             </h1>
@@ -287,9 +346,10 @@ function Settings() {
 
           <span className="text-gray-300 hidden md:block shrink-0">|</span>
           <h2 className="text-lg font-semibold text-sky-700 hidden md:block tracking-tight">Settings</h2>
+          <AdminHeaderProjectSwitch />
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4">
+        <HeaderRightActions>
           <div className="relative" ref={notificationRef}>
             <button
               type="button"
@@ -430,21 +490,23 @@ function Settings() {
           <button
             type="button"
             onClick={() => navigate('/settings')}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none overflow-hidden"
           >
-            <span className="text-white font-semibold text-sm">{userInitial}</span>
+            {headerAvatar ? (
+              <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-semibold text-sm">{userInitial}</span>
+            )}
           </button>
-        </div>
+        </HeaderRightActions>
       </header>
 
       <div className="flex flex-1 min-h-0">
-        <aside
-          className={`bg-sky-950 text-white border-r border-sky-900 h-full shrink-0 flex flex-col overflow-hidden transition-all duration-300 ${
-            sidebarOpen ? 'w-20' : 'w-0 md:w-20'
-          }`}
-        >
-          <MainSidebarNav />
-        </aside>
+        {!isSuperAdmin && (
+          <AppShellSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+            <MainSidebarNav onNavigate={() => setSidebarOpen(false)} />
+          </AppShellSidebar>
+        )}
 
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">
           <div className="relative isolate p-4 md:p-8 lg:p-10 max-w-5xl mx-auto">
@@ -479,9 +541,38 @@ function Settings() {
                 )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div className="flex flex-col items-center justify-start">
-                    <div className="w-28 h-28 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-800 text-white flex items-center justify-center text-4xl font-semibold mb-4 shadow-lg shadow-sky-500/35 ring-4 ring-sky-100">
-                      {(user?.name || 'U').charAt(0).toUpperCase()}
+                    <div className="relative mb-4">
+                      <div className="w-28 h-28 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-800 text-white flex items-center justify-center text-4xl font-semibold shadow-lg shadow-sky-500/35 ring-4 ring-sky-100 overflow-hidden">
+                        {avatarPreview ? (
+                          <img src={avatarPreview} alt={user?.name || 'Profile'} className="w-full h-full object-cover" />
+                        ) : (
+                          (user?.name || 'U').charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      {isProfileEditing && (
+                        <button
+                          type="button"
+                          onClick={() => photoInputRef.current?.click()}
+                          className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-white border-2 border-sky-200 text-sky-700 shadow-md flex items-center justify-center hover:bg-sky-50 transition"
+                          title="Upload photo"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
+                      )}
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={handlePhotoSelect}
+                      />
                     </div>
+                    {isProfileEditing && (
+                      <p className="text-xs text-gray-500 mb-2 text-center">JPG, PNG or WebP · max 500KB</p>
+                    )}
                     {!isProfileEditing ? (
                       <button
                         type="button"
@@ -560,7 +651,8 @@ function Settings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">WhatsApp Number</label>
-                      <div className="grid grid-cols-3 gap-3">
+                      <p className="text-xs text-gray-500 mb-2">Number used at registration (editable when you click Edit).</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <select
                           name="countryCode"
                           value={profileForm.countryCode}
@@ -580,12 +672,6 @@ function Settings() {
                         </select>
                         <input
                           type="text"
-                          value={profileForm.countryCode}
-                          disabled
-                          className="px-3 py-2.5 bg-gray-50/80 border-2 border-gray-100 rounded-xl text-sm text-gray-600"
-                        />
-                        <input
-                          type="text"
                           name="whatsappNumber"
                           value={profileForm.whatsappNumber}
                           onChange={handleProfileFormChange}
@@ -595,7 +681,7 @@ function Settings() {
                               ? 'bg-white border-gray-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-400/30 outline-none'
                               : 'bg-gray-50/80 border-gray-100 text-gray-600'
                           }`}
-                          placeholder="Enter mobile number"
+                          placeholder="Mobile number"
                         />
                       </div>
                     </div>

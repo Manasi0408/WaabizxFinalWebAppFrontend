@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo } from "react";
+import BrandLogoMark from '../components/BrandLogoMark';
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { logout } from "../services/authService";
+import HeaderThemeToggle from "./HeaderThemeToggle";
 
 function AgentTopbar({ onMenuClick }) {
   const location = useLocation();
@@ -71,10 +73,7 @@ function AgentTopbar({ onMenuClick }) {
             to="/agent-dashboard"
             className="hidden sm:flex items-center gap-2.5 shrink-0 transition hover:opacity-90"
             state={project ? { project } : undefined}
-          >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 flex items-center justify-center shadow-md shadow-sky-500/25 ring-2 ring-white">
-              <span className="text-white font-bold text-sm">W</span>
-            </div>
+          ><BrandLogoMark size="sm" />
             <span className="text-sm font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
               Waabizx
             </span>
@@ -87,6 +86,7 @@ function AgentTopbar({ onMenuClick }) {
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3 w-full sm:w-auto">
+          <HeaderThemeToggle showDivider={false} />
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden />

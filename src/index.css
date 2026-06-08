@@ -1,3 +1,6 @@
+@import './styles/dark-theme.css';
+@import './styles/brand-logo.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

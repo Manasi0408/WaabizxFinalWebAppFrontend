@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import BrandLogoMark from '../components/BrandLogoMark';
 import { useNavigate, Link } from 'react-router-dom';
-import { getProfile, isAuthenticated, logout } from '../services/authService';
+import { getProfile, isAuthenticated, logout, readSessionUser } from '../services/authService';
 import { getNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import {
   getContacts,
@@ -9,13 +10,17 @@ import {
   deleteContact,
   optOutContact,
   optInContact,
-  getContactById
+  getContactById,
+  uploadContactsCSV
 } from '../services/contactService';
 import MainSidebarNav from '../components/MainSidebarNav';
+import AppShellSidebar from '../components/AppShellSidebar';
+import AdminHeaderProjectSwitch from '../components/AdminHeaderProjectSwitch';
+import HeaderRightActions from '../components/HeaderRightActions';
 
 function Contacts() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +31,10 @@ function Contacts() {
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1, limit: 20 });
   const [filters, setFilters] = useState({ status: '', type: '', search: '', page: 1 });
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importModalError, setImportModalError] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showOptOutModal, setShowOptOutModal] = useState(false);
@@ -40,7 +49,15 @@ function Contacts() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState({ show: false, type: 'info', message: '' });
+  const [importMenuOpen, setImportMenuOpen] = useState(false);
+  const importMenuRef = useRef(null);
   const notificationRef = useRef(null);
+
+  const showToast = (message, type = 'info') => {
+    setToast({ show: true, type, message });
+    setTimeout(() => setToast({ show: false, type: 'info', message: '' }), 3500);
+  };
 
   // Fetch user profile
   useEffect(() => {
@@ -98,16 +115,17 @@ function Contacts() {
     }
   }, [notificationDropdownOpen]);
 
-  // Fetch contacts
-  const fetchContacts = async () => {
+  // Fetch contacts — optional override merges with current filters (e.g. after import).
+  const fetchContacts = async (override = null) => {
     try {
       setLoadingContacts(true);
+      const q = override != null ? { ...filters, ...override } : filters;
       const data = await getContacts({
-        status: filters.status,
-        type: filters.type,
-        search: filters.search,
-        page: filters.page,
-        limit: 20
+        status: q.status,
+        type: q.type,
+        search: q.search,
+        page: q.page,
+        limit: q.limit ?? 20
       });
       setContacts(data.contacts || []);
       setPagination(data.pagination || { total: 0, page: 1, pages: 1, limit: 20 });
@@ -130,6 +148,9 @@ function Contacts() {
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setNotificationDropdownOpen(false);
+      }
+      if (importMenuRef.current && !importMenuRef.current.contains(event.target)) {
+        setImportMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -173,6 +194,46 @@ function Contacts() {
     return date.toLocaleDateString();
   };
 
+  const openImportModal = () => {
+    setImportFile(null);
+    setImportModalError('');
+    setShowImportModal(true);
+    setError('');
+  };
+
+  const handleImportContacts = async (e) => {
+    e.preventDefault();
+    setImportModalError('');
+    if (!importFile) {
+      return;
+    }
+    setImporting(true);
+    try {
+      const data = await uploadContactsCSV(importFile);
+      const msg =
+        data?.message ||
+        (data?.importedCount != null
+          ? `Imported ${data.importedCount} contact(s).`
+          : 'Import completed.');
+      showToast(msg, 'info');
+      setShowImportModal(false);
+      setImportFile(null);
+      setFilters((prev) => ({ ...prev, status: '', type: '', search: '', page: 1 }));
+      await fetchContacts({ status: '', type: '', search: '', page: 1 });
+      if (Array.isArray(data.contacts) && data.contacts.length > 0) {
+        setContacts((prev) => {
+          const incomingIds = new Set(data.contacts.map((c) => Number(c.id)));
+          const tail = (prev || []).filter((c) => !incomingIds.has(Number(c.id)));
+          return [...data.contacts, ...tail];
+        });
+      }
+    } catch (err) {
+      setImportModalError(err?.message || 'Import failed. Try again.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleCreateContact = async (e) => {
     e.preventDefault();
     setError('');
@@ -181,20 +242,35 @@ function Contacts() {
 
     try {
       const tagsArray = formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
-      await createContact({
+      const payload = {
         phone: formData.phone,
         name: formData.name,
         email: formData.email || null,
         tags: tagsArray,
-        country: formData.country || null
-      });
-      setSuccess('Contact created successfully!');
+        country: formData.country || null,
+      };
+      console.log('[Contacts] createContact submit', payload);
+      const result = await createContact(payload);
+      if (result?.alreadyExists) {
+        const dupMsg = 'This number already exists. Try with another number.';
+        showToast(dupMsg, 'warning');
+        console.warn('[Contacts] Create contact:', dupMsg);
+      } else {
+        setSuccess('Contact created successfully!');
+      }
       setShowCreateModal(false);
       setFormData({ phone: '', name: '', email: '', tags: '', country: '' });
       fetchContacts();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError(error.message || 'Failed to create contact');
+      const msg = error.message || 'Failed to create contact';
+      setError(msg);
+      showToast(msg, 'error');
+      console.error('[Contacts] createContact failed', {
+        message: msg,
+        error,
+        formData: { phone: formData.phone, name: formData.name },
+      });
     } finally {
       setSaving(false);
     }
@@ -262,6 +338,26 @@ function Contacts() {
     } catch (error) {
       setError(error.message || 'Failed to opt-in contact');
     }
+  };
+
+  const openInboxChat = (contact, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!contact?.phone || !String(contact.phone).trim()) return;
+    navigate('/inbox', {
+      state: {
+        openChatContact: {
+          id: contact.id ?? null,
+          phone: String(contact.phone).trim(),
+          name: contact.name || '',
+          email: contact.email ?? null,
+          status: contact.status ?? 'active',
+          whatsappOptInAt: contact.whatsappOptInAt ?? null,
+        },
+      },
+    });
   };
 
   const openEditModal = async (contact) => {
@@ -338,9 +434,25 @@ function Contacts() {
 
   const userName = user?.name || 'User';
   const userInitial = userName.charAt(0).toUpperCase();
+  const headerAvatar = user?.avatar || readSessionUser()?.avatar || '';
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      {toast.show && (
+        <div className="fixed top-5 right-5 z-[9999] motion-pop">
+          <div
+            className={`rounded-xl border px-4 py-3 shadow-xl backdrop-blur-sm max-w-sm ${
+              toast.type === 'warning'
+                ? 'bg-amber-50/95 border-amber-200 text-amber-800'
+                : toast.type === 'success'
+                  ? 'bg-green-50/95 border-green-200 text-green-800'
+                  : 'bg-sky-50/95 border-sky-200 text-sky-800'
+            }`}
+          >
+            <p className="text-sm font-medium">{toast.message}</p>
+          </div>
+        </div>
+      )}
       <header className="motion-header-enter shrink-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-200/80 px-4 md:px-8 py-3.5 md:py-4 flex justify-between items-center shadow-sm shadow-gray-200/50">
         <div className="flex items-center gap-4 min-w-0">
           <button
@@ -354,10 +466,7 @@ function Contacts() {
             </svg>
           </button>
 
-          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 ring-2 ring-white">
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
+          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shrink-0"><BrandLogoMark size="md" />
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent hidden sm:block">
               Waabizx
             </h1>
@@ -365,9 +474,10 @@ function Contacts() {
 
           <span className="text-gray-300 hidden md:block shrink-0">|</span>
           <h2 className="text-lg font-semibold text-sky-700 hidden md:block tracking-tight">Contacts</h2>
+          <AdminHeaderProjectSwitch />
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4">
+        <HeaderRightActions>
           <div className="relative" ref={notificationRef}>
             <button
               type="button"
@@ -504,18 +614,22 @@ function Contacts() {
           <button
             type="button"
             onClick={() => navigate('/settings')}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none overflow-hidden"
           >
-            <span className="text-white font-semibold text-sm">{userInitial}</span>
+            {headerAvatar ? (
+              <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-semibold text-sm">{userInitial}</span>
+            )}
           </button>
-        </div>
+        </HeaderRightActions>
       </header>
 
       <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
-        <aside className={`bg-sky-950 text-white border-r border-sky-900 h-full shrink-0 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'w-20' : 'w-0 md:w-20'}`}>
-          <MainSidebarNav />
-        </aside>
+        <AppShellSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+          <MainSidebarNav onNavigate={() => setSidebarOpen(false)} />
+        </AppShellSidebar>
 
         {/* Main Content */}
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">
@@ -536,12 +650,62 @@ function Contacts() {
             </div>
           )}
 
-          <div className="motion-enter mb-6 md:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="motion-enter mb-6 md:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between relative z-30 overflow-visible">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">Contacts</h2>
               <p className="text-gray-600 text-sm md:text-base">Manage your WhatsApp contacts</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 relative z-30">
+              <div ref={importMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setImportMenuOpen((open) => !open)}
+                  className="inline-flex items-center gap-2 px-5 py-3 sm:px-6 rounded-xl font-semibold border-2 border-sky-200/90 bg-white text-sky-800 shadow-sm shadow-sky-900/5 hover:bg-sky-50/80 hover:border-sky-300 hover:shadow-md transition-all duration-300"
+                  aria-expanded={importMenuOpen}
+                  aria-haspopup="menu"
+                >
+                  <svg className="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  Import
+                  <svg className={`w-4 h-4 transition-transform ${importMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {importMenuOpen && (
+                  <ul
+                    className="absolute right-0 top-full z-[250] mt-2 min-w-[12.5rem] rounded-xl border border-gray-200 bg-white py-1 shadow-2xl shadow-gray-900/15 ring-1 ring-black/5"
+                    role="menu"
+                  >
+                    <li role="none">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setImportMenuOpen(false);
+                          openImportModal();
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-sky-50"
+                      >
+                        Import contacts
+                      </button>
+                    </li>
+                    <li role="none">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setImportMenuOpen(false);
+                          navigate('/campaigns/create');
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-sky-50"
+                      >
+                        Broadcast
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -615,16 +779,28 @@ function Contacts() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 <p className="text-gray-600 mb-4">No contacts found</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData({ phone: '', name: '', email: '', tags: '', country: '' });
-                    setShowCreateModal(true);
-                  }}
-                  className="bg-sky-600 text-white px-6 py-2.5 rounded-xl hover:bg-sky-700 transition-all duration-300 shadow-md shadow-sky-600/25 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] font-medium"
-                >
-                  Add Your First Contact
-                </button>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => openImportModal()}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-sky-200 bg-white text-sky-800 font-medium hover:bg-sky-50 transition-all duration-300 shadow-sm"
+                  >
+                    <svg className="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Import CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ phone: '', name: '', email: '', tags: '', country: '' });
+                      setShowCreateModal(true);
+                    }}
+                    className="bg-sky-600 text-white px-6 py-2.5 rounded-xl hover:bg-sky-700 transition-all duration-300 shadow-md shadow-sky-600/25 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] font-medium"
+                  >
+                    Add Your First Contact
+                  </button>
+                </div>
               </div>
             ) : (
               <>
@@ -640,7 +816,18 @@ function Contacts() {
                           aria-hidden
                         />
                         <div className="flex min-w-0 flex-1 flex-col gap-3 p-4 sm:p-4 lg:flex-row lg:items-center lg:gap-5 xl:gap-6">
-                          <div className="min-w-0 flex-1 lg:max-w-md xl:max-w-lg">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            className="min-w-0 flex-1 lg:max-w-md xl:max-w-lg text-left cursor-pointer rounded-xl -m-1 p-1 transition hover:bg-sky-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 focus-visible:ring-offset-2"
+                            onClick={() => openInboxChat(contact)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                openInboxChat(contact);
+                              }
+                            }}
+                          >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-sky-500/30 ring-2 ring-white">
                                 {getContactInitials(contact.name, contact.phone)}
@@ -692,7 +879,10 @@ function Contacts() {
                                 return (
                                   <button
                                     type="button"
-                                    onClick={() => handleOptInContact(contact.id)}
+                                    onClick={(ev) => {
+                                      ev.stopPropagation();
+                                      handleOptInContact(contact.id);
+                                    }}
                                     className="px-3 py-1.5 bg-sky-600 text-white text-xs font-medium rounded-lg hover:bg-sky-700 transition-all duration-200 active:scale-95 shadow-sm hover:shadow"
                                     title="Opt-in"
                                   >
@@ -704,7 +894,8 @@ function Contacts() {
                               return (
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={(ev) => {
+                                    ev.stopPropagation();
                                     setSelectedContact(contact);
                                     setShowOptOutModal(true);
                                   }}
@@ -717,7 +908,10 @@ function Contacts() {
                             })()}
                             <button
                               type="button"
-                              onClick={() => openEditModal(contact)}
+                              onClick={(ev) => {
+                                ev.stopPropagation();
+                                openEditModal(contact);
+                              }}
                               className="p-2 text-gray-600 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all duration-200 active:scale-95"
                               title="Edit"
                             >
@@ -727,7 +921,8 @@ function Contacts() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(ev) => {
+                                ev.stopPropagation();
                                 setSelectedContact(contact);
                                 setShowDeleteModal(true);
                               }}
@@ -934,6 +1129,119 @@ function Contacts() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         Create Contact
+                      </>
+                    )}
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Import contacts (CSV) */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="motion-pop w-full max-w-lg max-h-[92vh] overflow-hidden rounded-2xl shadow-2xl shadow-sky-900/20 border border-white/20 ring-1 ring-black/5 flex flex-col bg-white">
+            <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-emerald-600 via-sky-600 to-blue-700 text-white px-6 pt-7 pb-8 md:px-8 md:pt-8 md:pb-10">
+              <div className="pointer-events-none absolute -right-16 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" aria-hidden />
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 min-w-0">
+                  <div className="shrink-0 w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center shadow-lg">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 pt-0.5">
+                    <h3 className="text-xl md:text-2xl font-bold tracking-tight">Import contacts</h3>
+                    <p className="mt-1 text-sm text-white/90 leading-snug">
+                      Upload a file (CSV, text, or similar). Rows are saved to this project; the list refreshes right away.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!importing) {
+                      setShowImportModal(false);
+                      setImportFile(null);
+                      setImportModalError('');
+                    }
+                  }}
+                  className="shrink-0 rounded-xl p-2 text-white/90 hover:text-white hover:bg-white/15 transition-all duration-200 active:scale-95 disabled:opacity-50"
+                  aria-label="Close"
+                  disabled={importing}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleImportContacts} className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-gray-50/80 via-white to-sky-50/25">
+              <div className="p-5 md:p-6 space-y-5">
+                {importModalError && (
+                  <div className="rounded-xl border border-red-200/90 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {importModalError}
+                  </div>
+                )}
+                <div className="rounded-2xl border-2 border-sky-100/90 bg-white p-4 md:p-5 shadow-sm ring-1 ring-sky-50/80 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-sky-600/90">File tips</p>
+                  <p className="text-sm text-gray-600">
+                    Tabular files are read row-by-row. If there is no dedicated phone column, the first non-empty cell in each row is used when possible; otherwise a unique reference is generated so every row can be stored. Extra columns are kept as custom fields.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Choose file</label>
+                  <input
+                    type="file"
+                    disabled={importing}
+                    onChange={(ev) => {
+                      const f = ev.target.files?.[0];
+                      setImportFile(f || null);
+                      setImportModalError('');
+                    }}
+                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-700 file:cursor-pointer cursor-pointer"
+                  />
+                  {importFile && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      Selected: <span className="font-medium text-gray-700">{importFile.name}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-auto sticky bottom-0 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 px-5 py-4 md:px-6 md:py-5 border-t border-gray-200/80 bg-white/95 backdrop-blur-md">
+                <button
+                  type="button"
+                  disabled={importing}
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportFile(null);
+                    setImportModalError('');
+                  }}
+                  className="w-full sm:w-auto px-6 py-3 border-2 border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={importing}
+                  className="group relative w-full sm:w-auto overflow-hidden px-6 py-3 rounded-xl font-semibold text-white shadow-lg shadow-sky-600/35 transition-all duration-300 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-600 via-sky-600 to-blue-600"
+                >
+                  <span className="relative flex items-center justify-center gap-2">
+                    {importing ? (
+                      <>
+                        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                        Importing…
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Import
                       </>
                     )}
                   </span>

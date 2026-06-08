@@ -1,14 +1,26 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getProfile, logout, isAuthenticated } from '../services/authService';
+import { getProfile, logout, isAuthenticated, readSessionUser } from '../services/authService';
 import { getNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import { getDashboardStats, getConversationQuota } from '../services/dashboardService';
 import MainSidebarNav from '../components/MainSidebarNav';
+import AppShellSidebar from '../components/AppShellSidebar';
+import AdminHeaderProjectSwitch from '../components/AdminHeaderProjectSwitch';
+import HeaderRightActions from '../components/HeaderRightActions';
+import AgentRightPanel from '../components/AgentRightPanel';
 
 function Dashboard() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const selectedProject = (() => {
+    try {
+      const raw = localStorage.getItem('selectedProject');
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  })();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,12 +41,16 @@ function Dashboard() {
     remaining: 0,
     limit: 0,
     messagesSentToday: 0,
+    templatesSentToday: 0,
     accountName: null,
+    wccCredits: 0,
   });
   const [loadingQuota, setLoadingQuota] = useState(true);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
+  const [isWhatsAppApiLive, setIsWhatsAppApiLive] = useState(false);
   const [chartTimeRange, setChartTimeRange] = useState(1); // 1 (Today), 7, 30, or 90 days
   const notificationRef = useRef(null);
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   // Fetch user profile on component mount
   useEffect(() => {
@@ -181,7 +197,101 @@ function Dashboard() {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [loading, user?.id]);
+  }, [loading, user?.id, selectedProject?.id]);
+
+  const refreshConversationQuota = useCallback(async () => {
+    if (!isAuthenticated() || user?.id == null) return;
+    try {
+      const quota = await getConversationQuota(user.id);
+      setConversationQuota(quota);
+    } catch (error) {
+      console.error('Error refreshing conversation quota:', error);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    const onWccUpdated = (ev) => {
+      const next = ev?.detail?.wccCredits;
+      if (next != null && Number.isFinite(Number(next))) {
+        setConversationQuota((prev) => ({ ...prev, wccCredits: Number(next) }));
+      } else {
+        refreshConversationQuota();
+      }
+    };
+    window.addEventListener('wcc-quota-updated', onWccUpdated);
+    return () => window.removeEventListener('wcc-quota-updated', onWccUpdated);
+  }, [refreshConversationQuota]);
+
+  // Show WhatsApp API LIVE only when onboarding is completed for the selected project.
+  useEffect(() => {
+    const clientId = Number(user?.id);
+    if (!Number.isInteger(clientId) || clientId <= 0) {
+      setIsWhatsAppApiLive(false);
+      return;
+    }
+
+    let cancelled = false;
+    const readStoredLive = () => {
+      const cid = Number(clientId);
+      const pid = selectedProject?.id != null ? Number(selectedProject.id) : null;
+      if (!Number.isInteger(cid) || cid <= 0 || !Number.isInteger(pid) || pid <= 0) {
+        return false;
+      }
+      try {
+        const raw = localStorage.getItem(`wa_wb_meta_live_${cid}_p${pid}`);
+        if (!raw) return false;
+        const pack = JSON.parse(raw);
+        return Boolean(pack?.snapshot?.onboardingCompleted);
+      } catch (_) {
+        return false;
+      }
+    };
+
+    const fetchOnboardingStatus = async () => {
+      const projectId =
+        selectedProject?.id != null ? String(selectedProject.id) : null;
+      if (!projectId) {
+        if (!cancelled) setIsWhatsAppApiLive(false);
+        return;
+      }
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        headers['x-project-id'] = projectId;
+
+        let url = `${API_BASE}/meta/onboarding-status?client_id=${clientId}`;
+        url += `&projectId=${encodeURIComponent(projectId)}`;
+        const res = await fetch(url, { headers });
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled) {
+          if (!res.ok) {
+            setIsWhatsAppApiLive(readStoredLive());
+            return;
+          }
+          const live = Boolean(data?.success !== false && data?.onboardingCompleted);
+          setIsWhatsAppApiLive(live || readStoredLive());
+        }
+      } catch (_) {
+        if (!cancelled) setIsWhatsAppApiLive(readStoredLive());
+      }
+    };
+
+    fetchOnboardingStatus();
+    const intervalId = setInterval(fetchOnboardingStatus, 10000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchOnboardingStatus();
+    };
+    const onFocus = () => fetchOnboardingStatus();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [API_BASE, user?.id, selectedProject?.id]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -246,7 +356,7 @@ function Dashboard() {
   };
 
   const userName = user?.name || 'User';
-  const userAvatar = user?.avatar || '';
+  const userAvatar = user?.avatar || readSessionUser()?.avatar || '';
   const userInitial = userName.charAt(0).toUpperCase();
 
   return (
@@ -268,7 +378,7 @@ function Dashboard() {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 ring-2 ring-white">
-                <span className="text-white font-bold text-lg">W</span>
+              <span className="text-white font-bold text-lg">W</span>
             </div>
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent hidden sm:block">
               Waabizx
@@ -278,10 +388,20 @@ function Dashboard() {
           {/* Page Title */}
           <span className="text-gray-300 hidden md:block">|</span>
           <h2 className="text-lg font-semibold text-sky-700 hidden md:block tracking-tight">Dashboard</h2>
+          <AdminHeaderProjectSwitch />
+          {isWhatsAppApiLive ? (
+            <div className="hidden lg:flex items-center gap-2 ml-2 pl-2 border-l border-sky-100/80">
+              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                WhatsApp Business API Status :
+              </span>
+              <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-1 text-[10px] font-bold ring-1 ring-emerald-200/80">
+                LIVE
+              </span>
+            </div>
+          ) : null}
         </div>
         
-        {/* Right Side Icons */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <HeaderRightActions>
           {/* Notifications */}
           <div className="relative" ref={notificationRef}>
             <button
@@ -437,7 +557,7 @@ function Dashboard() {
           <button
             type="button"
             onClick={() => navigate('/settings')}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none overflow-hidden"
           >
             {userAvatar ? (
               <img
@@ -449,22 +569,31 @@ function Dashboard() {
               <span className="text-white font-semibold text-sm">{userInitial}</span>
             )}
           </button>
-        </div>
+        </HeaderRightActions>
       </header>
 
       <div className="flex flex-1 min-h-0">
         {/* Collapsible Sidebar */}
-        <aside
-          className={`bg-sky-950 text-white border-r border-sky-900 h-full shrink-0 flex flex-col overflow-hidden transition-all duration-300 ${
-            sidebarOpen ? 'w-20' : 'w-0 md:w-20'
-          }`}
-        >
-          <MainSidebarNav />
-        </aside>
+        <AppShellSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+          <MainSidebarNav onNavigate={() => setSidebarOpen(false)} />
+        </AppShellSidebar>
 
         {/* Main Content */}
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">
-          <div className="p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto">
+          <div className="p-4 md:p-8 lg:p-10 max-w-[1800px] mx-auto">
+          <div className="flex flex-col xl:flex-row xl:items-start gap-6 xl:gap-8">
+          <div className="flex-1 min-w-0">
+          {selectedProject?.project_name ? (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-sky-600/90">Workspace</span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-sky-200/90 bg-white/90 px-4 py-1.5 text-sm font-semibold text-sky-900 shadow-sm ring-1 ring-sky-100/80">
+                <svg className="w-4 h-4 text-sky-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                </svg>
+                {selectedProject.project_name}
+              </span>
+            </div>
+          ) : null}
           {/* Header Greeting */}
           <div className="relative mb-8 md:mb-10 rounded-3xl overflow-hidden bg-gradient-to-br from-sky-900 via-sky-800 to-blue-950 px-6 py-8 md:px-10 md:py-10 shadow-xl shadow-sky-900/30 ring-1 ring-sky-400/20">
             <div className="motion-hero-blob-a pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-sky-400/20 blur-3xl" aria-hidden />
@@ -759,6 +888,19 @@ function Dashboard() {
                 )}
               </ul>
             </div>
+          </div>
+          </div>
+
+          <aside className="w-full xl:w-[22rem] shrink-0 xl:sticky xl:top-4 xl:self-start">
+            <AgentRightPanel
+              user={user}
+              selectedProject={selectedProject}
+              conversationQuota={conversationQuota}
+              loadingQuota={loadingQuota}
+              onRefreshConversationQuota={refreshConversationQuota}
+              isWhatsAppApiLive={isWhatsAppApiLive}
+            />
+          </aside>
           </div>
           </div>
         </main>

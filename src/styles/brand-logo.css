@@ -1,0 +1,86 @@
+/* Waabizx logo badge — theme-aware surface (logo PNG has dark fill) */
+
+.brand-logo-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(226, 232, 240, 0.95);
+}
+
+.brand-logo-mark__img {
+  width: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* App headers & light surfaces */
+html:not(.dark) header .brand-logo-mark,
+html:not(.dark) .motion-header-enter .brand-logo-mark {
+  background: #ffffff;
+  box-shadow:
+    0 1px 4px rgba(15, 23, 42, 0.1),
+    0 0 0 1px rgba(203, 213, 225, 0.9);
+}
+
+/* Dark theme app chrome */
+html.dark .brand-logo-mark {
+  background: #ffffff;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(148, 163, 184, 0.28);
+}
+
+html.dark header .brand-logo-mark,
+html.dark .motion-header-enter .brand-logo-mark {
+  background: #ffffff;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(148, 163, 184, 0.32);
+}
+
+/* Always-dark shells: auth panel, agent sidebar, colored bars */
+.brand-logo-mark--contrast,
+.brand-logo-mark.auth-brand-logo-pulse,
+.bg-sky-950 .brand-logo-mark,
+aside[class*='from-sky-900'] .brand-logo-mark,
+aside[class*='via-blue-950'] .brand-logo-mark,
+[class*='bg-[#075e54]'] .brand-logo-mark {
+  background: #ffffff;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+html.dark .brand-logo-mark--contrast,
+html.dark .brand-logo-mark.auth-brand-logo-pulse,
+html.dark .bg-sky-950 .brand-logo-mark {
+  background: #ffffff;
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.52),
+    0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.brand-logo-watermark {
+  pointer-events: none;
+  user-select: none;
+  object-fit: contain;
+  opacity: 0.065;
+  filter: saturate(0.85);
+}
+
+html.dark .brand-logo-watermark {
+  opacity: 0.085;
+  filter: saturate(1) brightness(1.08);
+}
+
+/* Mobile auth form column (no brand aside) — dark theme */
+html.dark main.flex.h-full .brand-logo-mark:not(.auth-brand-logo-pulse) {
+  background: #ffffff;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(148, 163, 184, 0.28);
+}

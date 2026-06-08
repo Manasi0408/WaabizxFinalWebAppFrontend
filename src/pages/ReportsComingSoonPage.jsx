@@ -1,22 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
+import BrandLogoMark from '../components/BrandLogoMark';
 import MainSidebarNav from "../components/MainSidebarNav";
+import AppShellSidebar from "../components/AppShellSidebar";
+import AdminHeaderProjectSwitch from "../components/AdminHeaderProjectSwitch";
+import HeaderRightActions from "../components/HeaderRightActions";
+import { readSessionUser } from "../services/authService";
 
 export default function ReportsComingSoonPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const API_URL = "https://wabizx.techwhizzc.com/api";
 
-  const [selectedAgent, setSelectedAgent] = useState(null);
-  const user = useMemo(() => {
-    try {
-      const raw = localStorage.getItem("user");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }, []);
+  const user = readSessionUser();
 
   const userName = user?.name || user?.email || "User";
   const userInitial = String(userName || "U").charAt(0).toUpperCase();
+  const headerAvatar = user?.avatar || "";
 
   const loggedInUserId = user?.id ?? user?._id ?? null;
 
@@ -29,6 +27,7 @@ export default function ReportsComingSoonPage() {
   const [toast, setToast] = useState({ show: false, message: "" });
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState({ totalIntervenedConversations: 0 });
+  const [selectedAgent, setSelectedAgent] = useState(null);
 
   useEffect(() => {
     try {
@@ -161,39 +160,37 @@ export default function ReportsComingSoonPage() {
             </svg>
           </button>
 
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 ring-2 ring-white">
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
+          <div className="flex items-center gap-3 min-w-0"><BrandLogoMark size="md" />
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-sky-700 tracking-tight truncate">Reports</h2>
               <p className="text-xs text-gray-500 truncate">Intervened agents summary</p>
             </div>
           </div>
+          <AdminHeaderProjectSwitch />
         </div>
 
-        <div className="flex items-center gap-3">
+        <HeaderRightActions>
           <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
             <span className="font-semibold text-gray-700">{userName}</span>
           </div>
           <div
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 ring-2 ring-white"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 ring-2 ring-white overflow-hidden"
             title={userName}
           >
-            <span className="text-white font-semibold text-sm">{userInitial}</span>
+            {headerAvatar ? (
+              <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-semibold text-sm">{userInitial}</span>
+            )}
           </div>
-        </div>
+        </HeaderRightActions>
       </header>
 
       <div className="flex flex-1 min-h-0">
         {/* Collapsible Sidebar */}
-        <aside
-          className={`bg-sky-950 text-white border-r border-sky-900 h-full shrink-0 flex flex-col overflow-hidden transition-all duration-300 ${
-            sidebarOpen ? "w-20" : "w-0 md:w-20"
-          }`}
-        >
-          <MainSidebarNav />
-        </aside>
+        <AppShellSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+          <MainSidebarNav onNavigate={() => setSidebarOpen(false)} />
+        </AppShellSidebar>
 
         {/* Main Content */}
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">

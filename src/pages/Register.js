@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import BrandLogoMark, { BrandLogoWatermark } from '../components/BrandLogoMark';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../services/authService';
+import ThemeToggle from '../components/ThemeToggle';
+import PasswordInput from '../components/PasswordInput';
 
 const inputClass =
   'w-full rounded-xl border-2 border-gray-200/90 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition-all placeholder:text-gray-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-500/10 sm:py-3';
@@ -66,9 +69,11 @@ function Register() {
           state: {
             email: formData.email,
             mobileNumber: formData.mobileNumber,
-            otpExpiresInSeconds: Number(response.expiresInSeconds || 50),
-          }
+            otpExpiresInSeconds: Number(response.expiresInSeconds || 600),
+          },
         });
+      } else {
+        setError(response?.message || 'Registration failed. Please try again.');
       }
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
@@ -79,6 +84,9 @@ function Register() {
 
   return (
     <div className="fixed inset-0 z-[1] flex flex-col overflow-hidden overscroll-none bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div className="absolute -right-24 -top-32 h-[28rem] w-[28rem] rounded-full bg-sky-400/25 blur-3xl" />
         <div className="absolute -left-32 top-1/4 h-[22rem] w-[22rem] rounded-full bg-blue-500/15 blur-3xl" />
@@ -108,12 +116,7 @@ function Register() {
             className="auth-left-ambient-orb pointer-events-none absolute left-1/4 top-1/3 h-80 w-80 -translate-x-1/2 rounded-full bg-teal-400/10 blur-3xl"
             aria-hidden
           />
-          <span
-            className="pointer-events-none absolute bottom-6 right-0 select-none text-[11rem] font-black leading-none text-white/[0.035] xl:text-[13rem]"
-            aria-hidden
-          >
-            W
-          </span>
+          <BrandLogoWatermark className="absolute bottom-4 right-0 h-44 w-auto xl:h-52" />
 
           <div className="relative z-10 flex h-full min-h-0 flex-col overflow-hidden px-8 py-8 text-white shadow-2xl shadow-black/20 xl:px-11 xl:py-10">
             <header className="flex shrink-0 items-center gap-3.5">
@@ -123,10 +126,7 @@ function Register() {
                 </div>
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-70" aria-hidden>
                   <div className="auth-logo-orbit-ring--reverse h-[44px] w-[44px] rounded-full border border-dashed border-white/30 xl:h-[50px] xl:w-[50px]" />
-                </div>
-                <div className="auth-brand-logo-pulse relative z-10 flex h-11 w-11 items-center justify-center rounded-xl bg-white/12 text-base font-bold shadow-lg ring-1 ring-white/25 backdrop-blur-md xl:h-12 xl:w-12 xl:text-lg">
-                  W
-                </div>
+                </div><BrandLogoMark size="lg" className="auth-brand-logo-pulse relative z-10" />
               </div>
               <div className="min-w-0">
                 <p className="text-base font-bold tracking-tight xl:text-lg">Waabizx</p>
@@ -306,10 +306,10 @@ function Register() {
         <main className={`flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain px-4 sm:px-6 lg:px-10 xl:px-14 ${hasError ? 'justify-start py-2 lg:py-2' : 'justify-center py-5'}`}>
           <div className="mx-auto w-full max-w-md shrink-0">
             <div className="mb-3 text-center lg:hidden">
-              <div className="mx-auto mb-1.5 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-base font-bold text-white shadow-lg shadow-sky-600/35 ring-2 ring-white">
-                W
+              <div className="mx-auto mb-1.5 flex justify-center">
+                <BrandLogoMark size="lg" />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600/90">Waabizx</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600/90 dark:text-sky-400/90">Waabizx</p>
             </div>
 
             <div className="mt-2 mb-3 text-center lg:mt-3 lg:mb-4 lg:text-left">
@@ -399,8 +399,7 @@ function Register() {
                     <label htmlFor="password" className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-gray-500 sm:mb-1.5 sm:text-xs">
                       Password
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       id="password"
                       name="password"
                       value={formData.password}
@@ -419,8 +418,7 @@ function Register() {
                     >
                       Confirm password
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       id="confirmPassword"
                       name="confirmPassword"
                       value={formData.confirmPassword}

@@ -5,6 +5,25 @@ const getToken = () => {
   return localStorage.getItem('token');
 };
 
+const authHeaders = (extra = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...extra,
+  };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  try {
+    const raw = localStorage.getItem('selectedProject');
+    const selected = raw ? JSON.parse(raw) : null;
+    if (selected?.id != null && String(selected.id).trim() !== '') {
+      headers['x-project-id'] = String(selected.id);
+    }
+  } catch (_) {
+    /* ignore */
+  }
+  return headers;
+};
+
 const normalizeErrorMessage = (data, fallback) => {
   if (!data) return fallback;
   if (typeof data === 'string') return data;
@@ -76,10 +95,7 @@ export const getTemplates = async (filters = {}) => {
 
     const response = await fetch(`${API_URL}/templates?${params.toString()}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+      headers: authHeaders(),
     });
 
     const data = await response.json();

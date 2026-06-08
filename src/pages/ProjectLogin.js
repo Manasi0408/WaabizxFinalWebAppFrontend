@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
+import PasswordInput from "../components/PasswordInput";
 
 function ProjectLogin() {
   const [email, setEmail] = useState("");
@@ -41,8 +42,7 @@ function ProjectLogin() {
       <br />
       <br />
 
-      <input
-        type="password"
+      <PasswordInput
         placeholder="Enter Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}

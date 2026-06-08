@@ -7,6 +7,7 @@ function AgentStatusCards() {
     remaining: 0,
     limit: 0,
     messagesSentToday: 0,
+    templatesSentToday: 0,
   });
   const [loadingQuota, setLoadingQuota] = useState(true);
 
@@ -32,12 +33,12 @@ function AgentStatusCards() {
         const res = await getConversationQuota(accountId);
         if (!cancelled) {
           setQuota(
-            res || { used: 0, remaining: 0, limit: 0, messagesSentToday: 0 }
+            res || { used: 0, remaining: 0, limit: 0, messagesSentToday: 0, templatesSentToday: 0 }
           );
         }
       } catch (e) {
         if (!cancelled) {
-          setQuota({ used: 0, remaining: 0, limit: 0, messagesSentToday: 0 });
+          setQuota({ used: 0, remaining: 0, limit: 0, messagesSentToday: 0, templatesSentToday: 0 });
         }
       } finally {
         if (!cancelled && first) {
@@ -69,7 +70,7 @@ function AgentStatusCards() {
       accent: "from-sky-500/10 to-emerald-500/5",
     },
     {
-      label: "Remaining (limit − sent today)",
+      label: "Remaining (limit − templates today)",
       value: loadingQuota ? "..." : Number(quota.remaining || 0).toLocaleString(),
       valueClass: "text-gray-900",
       accent: "from-sky-500/15 to-blue-500/10",

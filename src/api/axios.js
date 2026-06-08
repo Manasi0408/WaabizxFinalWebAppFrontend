@@ -10,6 +10,16 @@ instance.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  try {
+    const raw = localStorage.getItem("selectedProject");
+    if (raw) {
+      const selectedProject = JSON.parse(raw);
+      const projectId = selectedProject?.id;
+      if (projectId != null && String(projectId).trim() !== "") {
+        config.headers["x-project-id"] = String(projectId);
+      }
+    }
+  } catch (_) {}
   return config;
 });
 

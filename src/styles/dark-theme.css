@@ -1,0 +1,1525 @@
+/**
+ * Waabizx dark theme — professional navy + sky accent (mirrors light brand)
+ * Maps existing light-mode Tailwind utilities to a cohesive dark palette.
+ */
+html.dark {
+  color-scheme: dark;
+
+  --wbx-bg: #0a0f1a;
+  --wbx-bg-elevated: #0f1629;
+  --wbx-surface: #141c2e;
+  --wbx-surface-raised: #1a2236;
+  --wbx-surface-hover: #1f2940;
+  --wbx-surface-active: #24304a;
+  --wbx-border: rgba(148, 163, 184, 0.14);
+  --wbx-border-strong: rgba(148, 163, 184, 0.22);
+  --wbx-border-soft: rgba(148, 163, 184, 0.08);
+  --wbx-text: #f1f5f9;
+  --wbx-text-secondary: #cbd5e1;
+  --wbx-text-muted: #94a3b8;
+  --wbx-text-faint: #64748b;
+  --wbx-accent: #38bdf8;
+  --wbx-accent-muted: #7dd3fc;
+  --wbx-accent-soft: #0ea5e9;
+  --wbx-accent-bg: rgba(14, 165, 233, 0.12);
+  --wbx-accent-bg-strong: rgba(14, 165, 233, 0.2);
+  --wbx-glass: rgba(20, 28, 46, 0.88);
+  --wbx-glass-heavy: rgba(20, 28, 46, 0.95);
+  --wbx-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --wbx-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --wbx-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+html.dark body {
+  background-color: var(--wbx-bg);
+  color: var(--wbx-text);
+}
+
+html.dark ::selection {
+  background-color: rgba(56, 189, 248, 0.35);
+  color: #fff;
+}
+
+/* ── Page shells & gradients ──────────────────────────────────────────── */
+html.dark .h-screen.bg-gray-50,
+html.dark .min-h-screen.bg-gray-50,
+html.dark .flex-row.bg-gray-50,
+html.dark .flex-col.bg-gray-50 {
+  background-color: var(--wbx-bg-elevated) !important;
+}
+
+html.dark main.flex-1,
+html.dark main[class*='bg-gradient'],
+html.dark .min-h-screen.bg-gradient-to-b,
+html.dark [class*='bg-gradient-to-b'][class*='from-sky'],
+html.dark [class*='bg-gradient-to-b'][class*='via-white'],
+html.dark [class*='bg-gradient-to-b'][class*='to-sky'],
+html.dark .fixed.inset-0[class*='from-sky-50'] {
+  background: linear-gradient(
+    180deg,
+    #111827 0%,
+    var(--wbx-bg) 42%,
+    #0d1320 100%
+  ) !important;
+}
+
+html.dark [class*='bg-gradient-to-r'][class*='from-white'],
+html.dark [class*='bg-gradient-to-r'][class*='from-slate'],
+html.dark [class*='bg-gradient-to-r'][class*='to-white'],
+html.dark [class*='bg-gradient-to-r'][class*='to-sky-50'] {
+  background: linear-gradient(
+    90deg,
+    rgba(20, 28, 46, 0.96),
+    rgba(14, 165, 233, 0.06),
+    rgba(20, 28, 46, 0.88)
+  ) !important;
+}
+
+html.dark [class*='from-sky-50'][class*='to-white'],
+html.dark [class*='from-sky-50'][class*='border-l-sky'] {
+  background: linear-gradient(
+    90deg,
+    rgba(14, 165, 233, 0.14),
+    var(--wbx-surface)
+  ) !important;
+}
+
+html.dark .from-sky-50.to-sky-50\/40,
+html.dark .bg-gradient-to-r.from-sky-50,
+html.dark [class*='from-sky-50'][class*='to-sky-50'] {
+  background: linear-gradient(
+    90deg,
+    rgba(14, 165, 233, 0.1),
+    rgba(20, 28, 46, 0.85)
+  ) !important;
+}
+
+html.dark .from-gray-50.to-gray-100,
+html.dark [class*='from-gray-50'][class*='to-gray-100'] {
+  background: linear-gradient(
+    to bottom right,
+    var(--wbx-surface-raised),
+    var(--wbx-surface)
+  ) !important;
+}
+
+html.dark .hover\:from-sky-50:hover,
+html.dark .hover\:to-sky-100\/80:hover,
+html.dark .hover\:from-sky-50\/90:hover {
+  background-color: var(--wbx-surface-hover) !important;
+}
+
+html.dark .hover\:from-gray-50:hover,
+html.dark .hover\:to-sky-100:hover,
+html.dark .hover\:to-sky-50:hover {
+  background: linear-gradient(
+    to bottom right,
+    var(--wbx-surface-hover),
+    rgba(14, 165, 233, 0.08)
+  ) !important;
+}
+
+/* ── Decorative blobs ─────────────────────────────────────────────────── */
+html.dark .motion-page-blob {
+  opacity: 0.22;
+}
+
+html.dark .fixed.inset-0 [class*='bg-sky-400'],
+html.dark .fixed.inset-0 [class*='bg-blue-500'],
+html.dark .fixed.inset-0 [class*='bg-cyan-300'] {
+  opacity: 0.12;
+}
+
+/* ── App headers (not auth brand panel) ───────────────────────────────── */
+html.dark header.motion-header-enter,
+html.dark header[class*='bg-white'] {
+  background: var(--wbx-glass) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: var(--wbx-border) !important;
+  box-shadow:
+    0 1px 0 rgba(56, 189, 248, 0.05),
+    var(--wbx-shadow-sm) !important;
+}
+
+html.dark header.motion-header-enter button:hover,
+html.dark header[class*='bg-white'] button:hover,
+html.dark header .hover\:bg-gray-100\/80:hover {
+  background-color: var(--wbx-surface-hover) !important;
+}
+
+html.dark header.motion-header-enter .text-gray-600,
+html.dark header[class*='bg-white'] .text-gray-600,
+html.dark header svg.text-gray-600 {
+  color: var(--wbx-text-muted) !important;
+}
+
+/* Sub-header bars (inbox, history, etc.) */
+html.dark .shrink-0[class*='from-white'],
+html.dark .shrink-0[class*='bg-white'] {
+  background: var(--wbx-glass) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+/* ── Brand title gradient ───────────────────────────────────────────────── */
+html.dark .bg-gradient-to-r.from-gray-800,
+html.dark .from-gray-800.to-gray-600,
+html.dark [class*='from-gray-800'][class*='to-gray-600'],
+html.dark [class*='from-gray-900'][class*='via-sky-800'],
+html.dark [class*='from-gray-900'][class*='to-gray-800'] {
+  --tw-gradient-from: #f1f5f9 var(--tw-gradient-from-position);
+  --tw-gradient-to: #94a3b8 var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+/* ── Surfaces: white & gray backgrounds ───────────────────────────────── */
+html.dark .bg-white,
+html.dark .bg-white\/90,
+html.dark .bg-white\/95,
+html.dark .bg-white\/80,
+html.dark .bg-white\/70,
+html.dark .bg-white\/50,
+html.dark .bg-white\/40,
+html.dark .hover\:bg-white:hover,
+html.dark .hover\:bg-white\/70:hover,
+html.dark .hover\:bg-white\/90:hover {
+  background-color: var(--wbx-surface) !important;
+}
+
+html.dark .bg-white\/90.backdrop-blur-sm,
+html.dark .bg-white\/90.backdrop-blur-md,
+html.dark .bg-white\/95.backdrop-blur-md,
+html.dark .bg-white\/40.backdrop-blur-\[2px\] {
+  background-color: var(--wbx-glass) !important;
+}
+
+html.dark .bg-gray-50,
+html.dark .bg-gray-50\/50,
+html.dark .bg-gray-50\/80,
+html.dark .bg-gray-50\/90,
+html.dark .from-slate-50,
+html.dark .from-slate-50\/80,
+html.dark .from-slate-50\/90,
+html.dark .to-gray-50\/80,
+html.dark .to-slate-50\/80 {
+  background-color: var(--wbx-surface-raised) !important;
+}
+
+html.dark .bg-gray-100,
+html.dark .bg-gray-200,
+html.dark .bg-gray-300 {
+  background-color: var(--wbx-surface-raised) !important;
+}
+
+html.dark .bg-\[\#f2f2f2\] {
+  background-color: var(--wbx-surface-raised) !important;
+}
+
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-gray-100:hover,
+html.dark .hover\:bg-gray-100\/80:hover {
+  background-color: var(--wbx-surface-hover) !important;
+}
+
+/* ── Sky tinted surfaces ──────────────────────────────────────────────── */
+html.dark .bg-sky-50,
+html.dark .bg-sky-50\/20,
+html.dark .bg-sky-50\/30,
+html.dark .bg-sky-50\/40,
+html.dark .bg-sky-50\/50,
+html.dark .bg-sky-50\/60,
+html.dark .bg-sky-50\/70,
+html.dark .bg-sky-50\/80,
+html.dark .bg-sky-100,
+html.dark .from-sky-50\/90,
+html.dark .to-sky-100\/50,
+html.dark .to-sky-100\/40,
+html.dark .hover\:bg-sky-50:hover,
+html.dark .hover\:bg-sky-50\/50:hover,
+html.dark .hover\:bg-sky-50\/60:hover,
+html.dark .hover\:bg-sky-50\/80:hover {
+  background-color: var(--wbx-accent-bg) !important;
+}
+
+html.dark [class*='from-sky-100'][class*='to-sky-200'],
+html.dark .bg-gradient-to-br.from-sky-100 {
+  background: linear-gradient(
+    to bottom right,
+    rgba(14, 165, 233, 0.22),
+    rgba(14, 165, 233, 0.12)
+  ) !important;
+}
+
+html.dark .ring-sky-100,
+html.dark .ring-4.ring-sky-100 {
+  --tw-ring-color: rgba(56, 189, 248, 0.2) !important;
+}
+
+/* ── Cards, panels, modals ────────────────────────────────────────────── */
+html.dark .rounded-2xl.bg-white,
+html.dark .rounded-xl.bg-white,
+html.dark .rounded-lg.bg-white,
+html.dark [class*='shadow-lg'][class*='bg-white'],
+html.dark [class*='shadow-xl'][class*='bg-white'],
+html.dark [class*='shadow-2xl'][class*='bg-white'] {
+  background-color: var(--wbx-surface) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .shadow-sm,
+html.dark .shadow-md,
+html.dark .shadow-lg,
+html.dark .shadow-xl,
+html.dark .shadow-2xl {
+  --tw-shadow-color: rgba(0, 0, 0, 0.45);
+}
+
+html.dark .shadow-gray-200\/40,
+html.dark .shadow-gray-200\/50,
+html.dark .shadow-gray-200\/20,
+html.dark .shadow-gray-200\/30,
+html.dark .shadow-gray-900\/5,
+html.dark .shadow-gray-900\/10,
+html.dark .shadow-gray-900\/12,
+html.dark .shadow-gray-900\/15,
+html.dark .shadow-sky-900\/5,
+html.dark .shadow-sky-900\/15 {
+  --tw-shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+html.dark .ring-white,
+html.dark .ring-2.ring-white,
+html.dark .ring-4.ring-white {
+  --tw-ring-color: var(--wbx-surface-raised) !important;
+}
+
+html.dark .ring-black\/5,
+html.dark .ring-1.ring-black\/5 {
+  --tw-ring-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* ── Borders & dividers ───────────────────────────────────────────────── */
+html.dark .border-gray-100,
+html.dark .border-gray-100\/80,
+html.dark .border-gray-100\/90,
+html.dark .border-gray-200,
+html.dark .border-gray-200\/60,
+html.dark .border-gray-200\/80,
+html.dark .border-gray-200\/90,
+html.dark .border-gray-300,
+html.dark .border-sky-100,
+html.dark .border-sky-100\/80,
+html.dark .border-sky-100\/90,
+html.dark .border-sky-200,
+html.dark .border-sky-200\/70,
+html.dark .border-sky-200\/80,
+html.dark .border-sky-200\/90,
+html.dark .border-sky-300,
+html.dark .border-l.border-sky-100,
+html.dark .border-gray-200\/80.border-l,
+html.dark .ring-gray-100,
+html.dark .ring-gray-100\/80,
+html.dark .ring-sky-100\/40,
+html.dark .ring-sky-100\/50,
+html.dark .ring-sky-100\/60,
+html.dark .ring-sky-100\/80,
+html.dark .ring-sky-200\/70,
+html.dark .ring-sky-200\/80,
+html.dark .ring-sky-300\/50,
+html.dark .ring-sky-300\/60,
+html.dark .ring-gray-100\/80 {
+  border-color: var(--wbx-border) !important;
+  --tw-ring-color: var(--wbx-border-soft) !important;
+}
+
+html.dark .border-dashed.border-sky-200,
+html.dark .border-dashed.border-sky-200\/80 {
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+html.dark .border-l-4.border-l-sky-600 {
+  border-left-color: var(--wbx-accent-soft) !important;
+}
+
+html.dark .hover\:border-sky-200:hover,
+html.dark .hover\:border-sky-300:hover,
+html.dark .hover\:border-sky-300\/80:hover,
+html.dark .hover\:border-gray-200:hover {
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+html.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--wbx-border-soft) !important;
+}
+
+html.dark .border-t-sky-600 {
+  border-top-color: var(--wbx-accent) !important;
+}
+
+html.dark .border-sky-200.border-2 {
+  border-color: var(--wbx-border) !important;
+}
+
+/* ── Typography ───────────────────────────────────────────────────────── */
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-slate-600,
+html.dark .text-slate-700 {
+  color: var(--wbx-text) !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+  color: var(--wbx-text-secondary) !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-gray-400 {
+  color: var(--wbx-text-muted) !important;
+}
+
+html.dark .text-gray-300 {
+  color: var(--wbx-text-faint) !important;
+}
+
+html.dark .text-sky-700,
+html.dark .text-sky-700\/80,
+html.dark .text-sky-700\/90,
+html.dark h2.text-sky-700 {
+  color: var(--wbx-accent) !important;
+}
+
+html.dark .text-sky-600,
+html.dark .text-sky-500 {
+  color: var(--wbx-accent-soft) !important;
+}
+
+html.dark .text-sky-800,
+html.dark .text-sky-800\/80,
+html.dark .text-sky-800\/85,
+html.dark .text-sky-900,
+html.dark .text-sky-900\/80,
+html.dark .text-sky-950 {
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark .text-sky-200,
+html.dark .text-sky-100\/70 {
+  color: rgba(186, 230, 253, 0.85) !important;
+}
+
+html.dark .text-teal-700 {
+  color: #5eead4 !important;
+}
+
+html.dark svg.text-sky-500,
+html.dark svg.text-sky-600 {
+  color: var(--wbx-accent) !important;
+}
+
+html.dark .text-sky-200.mx-auto,
+html.dark svg.text-sky-200 {
+  color: rgba(56, 189, 248, 0.35) !important;
+}
+
+/* ── Form controls ────────────────────────────────────────────────────── */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: var(--wbx-surface-raised) !important;
+  border-color: var(--wbx-border-strong) !important;
+  color: var(--wbx-text) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder,
+html.dark .placeholder\:text-gray-400::placeholder {
+  color: var(--wbx-text-muted) !important;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: var(--wbx-accent-soft) !important;
+  --tw-ring-color: rgba(56, 189, 248, 0.22) !important;
+}
+
+html.dark input[type='checkbox'],
+html.dark input[type='radio'] {
+  accent-color: var(--wbx-accent-soft);
+}
+
+/* ── Tables ─────────────────────────────────────────────────────────────── */
+html.dark table thead,
+html.dark thead.bg-gray-100 {
+  background-color: var(--wbx-surface-raised) !important;
+}
+
+html.dark table tbody tr {
+  border-color: var(--wbx-border-soft) !important;
+}
+
+html.dark table tbody tr:hover {
+  background-color: var(--wbx-surface-hover) !important;
+}
+
+/* ── Status & alert surfaces ────────────────────────────────────────────── */
+html.dark .bg-green-50,
+html.dark .bg-emerald-50 {
+  background-color: rgba(6, 78, 59, 0.32) !important;
+}
+
+html.dark .bg-red-50,
+html.dark .bg-red-50\/50,
+html.dark .bg-red-50\/80,
+html.dark .bg-rose-50 {
+  background-color: rgba(127, 29, 29, 0.28) !important;
+}
+
+html.dark .bg-amber-50 {
+  background-color: rgba(120, 53, 15, 0.28) !important;
+}
+
+html.dark .bg-blue-50,
+html.dark .bg-blue-50\/50 {
+  background-color: rgba(30, 58, 138, 0.32) !important;
+}
+
+html.dark .bg-purple-50,
+html.dark .hover\:bg-purple-50:hover {
+  background-color: rgba(88, 28, 135, 0.28) !important;
+}
+
+html.dark .bg-indigo-50,
+html.dark .hover\:bg-indigo-50:hover {
+  background-color: rgba(49, 46, 129, 0.28) !important;
+}
+
+html.dark .bg-orange-50,
+html.dark .bg-orange-100 {
+  background-color: rgba(124, 45, 18, 0.32) !important;
+}
+
+html.dark .bg-yellow-50,
+html.dark .bg-yellow-100 {
+  background-color: rgba(113, 63, 18, 0.32) !important;
+}
+
+html.dark .text-green-600,
+html.dark .text-green-700,
+html.dark .text-green-800,
+html.dark .text-emerald-700,
+html.dark .text-emerald-800,
+html.dark .text-emerald-100 {
+  color: #6ee7b7 !important;
+}
+
+html.dark .text-red-600,
+html.dark .text-red-600\/90,
+html.dark .text-red-700 {
+  color: #fca5a5 !important;
+}
+
+html.dark .text-amber-800,
+html.dark .text-amber-900,
+html.dark .text-yellow-800 {
+  color: #fcd34d !important;
+}
+
+html.dark .text-orange-800 {
+  color: #fdba74 !important;
+}
+
+html.dark .border-green-200,
+html.dark .border-green-200\/90,
+html.dark .ring-green-100\/50 {
+  border-color: rgba(52, 211, 153, 0.3) !important;
+}
+
+html.dark .border-red-100,
+html.dark .border-red-200,
+html.dark .border-red-200\/90,
+html.dark .border-red-100\/80 {
+  border-color: rgba(248, 113, 113, 0.3) !important;
+}
+
+html.dark .border-amber-200 {
+  border-color: rgba(251, 191, 36, 0.3) !important;
+}
+
+html.dark .border-blue-500 {
+  border-color: rgba(59, 130, 246, 0.55) !important;
+}
+
+/* ── Badges & status pills ──────────────────────────────────────────────── */
+html.dark .bg-emerald-50.text-emerald-700,
+html.dark .bg-emerald-50.text-emerald-800 {
+  background-color: rgba(6, 95, 70, 0.42) !important;
+  color: #6ee7b7 !important;
+}
+
+html.dark .bg-sky-50.text-sky-800,
+html.dark .bg-sky-100.text-sky-800 {
+  background-color: rgba(12, 74, 110, 0.45) !important;
+  color: #7dd3fc !important;
+}
+
+html.dark .bg-blue-100,
+html.dark .bg-green-100,
+html.dark .bg-purple-100,
+html.dark .bg-gray-100.text-gray-800,
+html.dark .bg-yellow-100.text-yellow-800,
+html.dark .bg-orange-100.text-orange-800 {
+  background-color: var(--wbx-surface-raised) !important;
+}
+
+html.dark .text-blue-600,
+html.dark .text-purple-600,
+html.dark .text-indigo-600,
+html.dark .hover\:text-purple-600:hover,
+html.dark .hover\:text-indigo-600:hover,
+html.dark .hover\:text-sky-600:hover,
+html.dark .hover\:text-red-600:hover {
+  color: var(--wbx-accent) !important;
+}
+
+html.dark .bg-blue-50.border-blue-500 {
+  background-color: rgba(30, 58, 138, 0.28) !important;
+}
+
+/* ── Notification dropdown & menus ─────────────────────────────────────── */
+html.dark .motion-pop.bg-white,
+html.dark .absolute.bg-white.rounded-2xl,
+html.dark [class*='origin-top'][class*='bg-white'] {
+  background-color: var(--wbx-surface) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark [class*='from-slate-50'][class*='to-gray-50'] {
+  background: linear-gradient(
+    90deg,
+    var(--wbx-surface-raised),
+    var(--wbx-surface)
+  ) !important;
+}
+
+/* Notification bell — idle state gradient button */
+html.dark [class*='from-white'][class*='via-sky-50'],
+html.dark [class*='from-white'][class*='to-blue-50'] {
+  background: linear-gradient(
+    to bottom right,
+    var(--wbx-surface),
+    rgba(14, 165, 233, 0.08),
+    rgba(30, 58, 138, 0.12)
+  ) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark [class*='from-white'][class*='via-sky-50'] svg.text-sky-700,
+html.dark [class*='from-white'][class*='to-blue-50'] svg {
+  color: var(--wbx-accent) !important;
+}
+
+/* ── Chat & inbox ───────────────────────────────────────────────────────── */
+html.dark [class*='border-sky-100'][class*='bg-white'].rounded-2xl,
+html.dark .rounded-2xl.border.border-sky-100.bg-white {
+  background-color: var(--wbx-surface) !important;
+  border-color: var(--wbx-border) !important;
+  color: var(--wbx-text) !important;
+}
+
+html.dark .rounded-2xl.bg-white.text-gray-800,
+html.dark .bg-white.text-gray-800.rounded-br-md {
+  background-color: var(--wbx-surface-raised) !important;
+  color: var(--wbx-text) !important;
+}
+
+html.dark .bg-gradient-to-br.from-sky-700.to-slate-800 {
+  background: linear-gradient(
+    to bottom right,
+    #0369a1,
+    #1e293b
+  ) !important;
+}
+
+/* ── Loading spinners ───────────────────────────────────────────────────── */
+html.dark .border-sky-200.animate-spin,
+html.dark .animate-spin.border-sky-200 {
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .animate-spin.border-t-sky-600 {
+  border-top-color: var(--wbx-accent) !important;
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────────────────── */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: var(--wbx-bg);
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: var(--wbx-border-strong);
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.35);
+}
+
+html.dark {
+  scrollbar-color: var(--wbx-border-strong) var(--wbx-bg);
+}
+
+/* ── Charts (Recharts) ──────────────────────────────────────────────────── */
+html.dark .recharts-cartesian-grid line {
+  stroke: var(--wbx-border) !important;
+}
+
+html.dark .recharts-text,
+html.dark .recharts-legend-item-text {
+  fill: var(--wbx-text-muted) !important;
+}
+
+html.dark .recharts-default-tooltip {
+  background-color: var(--wbx-surface) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .recharts-tooltip-label,
+html.dark .recharts-tooltip-item {
+  color: var(--wbx-text) !important;
+}
+
+/* ── Auth form panel (right column) ─────────────────────────────────────── */
+html.dark .lg\:grid-cols-\[minmax\(0\,1fr\)_minmax\(0\,1\.05fr\)\] > div:last-child,
+html.dark [class*='lg:col-span'][class*='bg-white'],
+html.dark form[class*='bg-white'] {
+  color: var(--wbx-text);
+}
+
+html.dark aside.hidden.lg\:flex ~ div .bg-white,
+html.dark aside.hidden.lg\:flex + div {
+  background-color: transparent;
+}
+
+html.dark aside.hidden.lg\:flex ~ div .rounded-2xl.border,
+html.dark aside.hidden.lg\:flex ~ div .rounded-xl.border,
+html.dark aside.hidden.lg\:flex ~ div .shadow-xl {
+  background-color: var(--wbx-surface) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+/* Keep auth brand column untouched */
+html.dark aside.hidden.lg\:flex .text-white,
+html.dark aside.hidden.lg\:flex h2,
+html.dark aside.hidden.lg\:flex p {
+  color: inherit;
+}
+
+/* ── Motion card polish in dark mode ────────────────────────────────────── */
+html.dark .motion-card-rich.motion-hover-lift:hover,
+html.dark .motion-card-rich.motion-hover-lift:focus-visible {
+  box-shadow:
+    0 22px 44px -12px rgba(14, 165, 233, 0.12),
+    0 12px 28px -8px rgba(0, 0, 0, 0.35) !important;
+}
+
+html.dark .motion-card-rich::before {
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.2);
+}
+
+html.dark .group:hover .motion-avatar-breathe,
+html.dark .group:focus-visible .motion-avatar-breathe {
+  box-shadow: 0 8px 24px -6px rgba(14, 165, 233, 0.25);
+}
+
+html.dark .motion-card-shine__beam {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 45%,
+    rgba(255, 255, 255, 0.04) 55%,
+    transparent 100%
+  );
+}
+
+/* Primary action buttons keep vivid gradients; secondary/outline buttons */
+html.dark button.border-2.border-sky-200,
+html.dark button.border-2.border-sky-200\/90 {
+  background-color: var(--wbx-surface) !important;
+  color: var(--wbx-accent-muted) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+html.dark button.border-2.border-gray-200 {
+  background-color: var(--wbx-surface-raised) !important;
+  color: var(--wbx-text-secondary) !important;
+  border-color: var(--wbx-border-strong) !important;
+}
+
+html.dark button.border-2.border-gray-200:hover {
+  background-color: var(--wbx-surface-hover) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Route-specific: Login, Dashboard, Manage, Live Chat, Agent Dashboard
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Scrollable content areas that use page gradient (not <main>) */
+html.dark .flex-1.min-h-0.overflow-y-auto[class*='bg-gradient-to-b'],
+html.dark .flex-1.flex.min-h-0[class*='bg-gradient-to-b'],
+html.dark div.flex-1[class*='overflow-hidden'][class*='bg-gradient-to-b'] {
+  background: linear-gradient(
+    180deg,
+    #111827 0%,
+    var(--wbx-bg) 42%,
+    #0d1320 100%
+  ) !important;
+}
+
+/* ── /login ─────────────────────────────────────────────────────────────── */
+html.dark main.flex.h-full.min-h-0 {
+  background: transparent !important;
+}
+
+html.dark .fixed.inset-0.z-\[1\].flex.flex-col {
+  background: linear-gradient(
+    180deg,
+    #0f1629 0%,
+    var(--wbx-bg) 50%,
+    #0d1320 100%
+  ) !important;
+}
+
+html.dark [class*='shadow-sky-900'] {
+  --tw-shadow-color: rgba(0, 0, 0, 0.35);
+}
+
+html.dark .rounded-2xl.border.border-gray-100\/90.bg-white\/95,
+html.dark .rounded-2xl.border.border-gray-100\/90.bg-white\/95.p-5 {
+  background-color: var(--wbx-glass-heavy) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .rounded-xl.border.border-gray-200\/90.bg-gray-50\/70 {
+  background-color: var(--wbx-surface-raised) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .text-sky-600\/90,
+html.dark .lg\:text-sky-600 {
+  color: var(--wbx-accent-soft) !important;
+}
+
+html.dark .font-semibold.text-sky-700,
+html.dark a.font-semibold.text-sky-700,
+html.dark .text-sky-600.transition-colors {
+  color: var(--wbx-accent) !important;
+}
+
+html.dark .font-semibold.text-sky-700:hover,
+html.dark a.font-semibold.text-sky-700:hover,
+html.dark .hover\:text-sky-800:hover,
+html.dark .hover\:text-sky-900:hover {
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark .bg-gradient-to-r.from-emerald-50\/90,
+html.dark [class*='from-emerald-50'][class*='to-teal-50'] {
+  background: linear-gradient(
+    90deg,
+    rgba(6, 95, 70, 0.35),
+    rgba(15, 118, 110, 0.2)
+  ) !important;
+}
+
+html.dark .text-emerald-900 {
+  color: #a7f3d0 !important;
+}
+
+html.dark .bg-emerald-100.text-emerald-700,
+html.dark span.bg-emerald-100 {
+  background-color: rgba(6, 95, 70, 0.45) !important;
+  color: #6ee7b7 !important;
+}
+
+html.dark .text-red-800 {
+  color: #fca5a5 !important;
+}
+
+html.dark .ring-emerald-100\/80,
+html.dark .ring-red-100\/80 {
+  --tw-ring-color: var(--wbx-border-soft) !important;
+}
+
+html.dark .rounded-xl.border.border-sky-100\/90.bg-sky-50\/40 {
+  background-color: var(--wbx-accent-bg) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .text-sm.font-bold.text-sky-800 {
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark .border.border-gray-300 {
+  border-color: var(--wbx-border-strong) !important;
+}
+
+/* ── /dashboard (admin) ─────────────────────────────────────────────────── */
+html.dark .text-slate-900 {
+  color: var(--wbx-text) !important;
+}
+
+html.dark .text-slate-600 {
+  color: var(--wbx-text-secondary) !important;
+}
+
+html.dark .text-slate-500 {
+  color: var(--wbx-text-muted) !important;
+}
+
+html.dark .text-emerald-700,
+html.dark .text-violet-700 {
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark .bg-emerald-100.text-emerald-700,
+html.dark .bg-violet-100.text-violet-700,
+html.dark span.bg-emerald-100,
+html.dark span.bg-violet-100 {
+  background-color: var(--wbx-accent-bg-strong) !important;
+}
+
+html.dark [class*='from-sky-50'][class*='via-white'][class*='to-blue-50'],
+html.dark .bg-gradient-to-br.from-sky-50\/70 {
+  background: linear-gradient(
+    to bottom right,
+    rgba(14, 165, 233, 0.1),
+    var(--wbx-surface),
+    rgba(30, 58, 138, 0.12)
+  ) !important;
+}
+
+html.dark .border-emerald-200\/80,
+html.dark .ring-emerald-200\/60,
+html.dark .shadow-emerald-100\/60 {
+  border-color: rgba(52, 211, 153, 0.28) !important;
+  --tw-ring-color: rgba(52, 211, 153, 0.2) !important;
+  --tw-shadow-color: rgba(0, 0, 0, 0.35);
+}
+
+html.dark .border-violet-200\/80,
+html.dark .ring-violet-200\/60,
+html.dark .shadow-violet-100\/50 {
+  border-color: rgba(167, 139, 250, 0.28) !important;
+  --tw-ring-color: rgba(167, 139, 250, 0.2) !important;
+  --tw-shadow-color: rgba(0, 0, 0, 0.35);
+}
+
+html.dark .ring-sky-200\/60,
+html.dark .shadow-sky-100\/60,
+html.dark .shadow-sky-200\/30 {
+  --tw-ring-color: rgba(56, 189, 248, 0.2) !important;
+  --tw-shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+html.dark .inline-flex.rounded-full.border.border-sky-200\/90.bg-white\/90.text-sky-900,
+html.dark .inline-flex.items-center.rounded-full.border.border-sky-200\/90 {
+  background-color: var(--wbx-surface) !important;
+  color: var(--wbx-accent-muted) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .hover\:border-sky-100:hover,
+html.dark .hover\:border-sky-200\/60:hover {
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+html.dark .hover\:shadow-sky-400\/10:hover,
+html.dark .hover\:shadow-sky-500\/10:hover {
+  --tw-shadow-color: rgba(14, 165, 233, 0.15);
+}
+
+/* Dashboard hero — keep rich brand panel */
+html.dark .rounded-3xl.bg-gradient-to-br.from-sky-900 {
+  background: linear-gradient(
+    to bottom right,
+    #0c4a6e,
+    #0f172a,
+    #020617
+  ) !important;
+}
+
+/* Dashboard notifications */
+html.dark [class*='from-sky-50'][class*='to-white'].border-sky-500,
+html.dark button[class*='from-sky-50'][class*='border-sky-500'] {
+  background: linear-gradient(
+    90deg,
+    rgba(14, 165, 233, 0.18),
+    var(--wbx-surface)
+  ) !important;
+  border-left-color: var(--wbx-accent) !important;
+}
+
+html.dark [class*='hover:from-sky-100'][class*='hover:to-sky-50'] {
+  background-color: var(--wbx-surface-hover) !important;
+}
+
+html.dark [class*='from-sky-50'][class*='via-white'][class*='to-blue-50'] {
+  background: linear-gradient(
+    90deg,
+    var(--wbx-surface-raised),
+    var(--wbx-surface),
+    rgba(30, 58, 138, 0.15)
+  ) !important;
+}
+
+html.dark [class*='from-sky-100'][class*='to-blue-100'],
+html.dark [class*='from-emerald-100'][class*='to-teal-100'],
+html.dark [class*='from-indigo-100'][class*='to-sky-100'],
+html.dark [class*='from-gray-100'][class*='to-slate-100'] {
+  background: linear-gradient(
+    to bottom right,
+    var(--wbx-surface-raised),
+    var(--wbx-surface-hover)
+  ) !important;
+}
+
+html.dark [class*='from-sky-100'][class*='text-sky-700'],
+html.dark [class*='from-emerald-100'][class*='text-emerald-700'],
+html.dark [class*='from-indigo-100'][class*='text-indigo-700'],
+html.dark [class*='from-gray-100'][class*='text-gray-700'] {
+  color: var(--wbx-accent-muted) !important;
+}
+
+/* ── /manage (incl. opt-in management) ──────────────────────────────────── */
+html.dark aside.w-full.lg\:w-64,
+html.dark aside[class*='lg:w-64'][class*='bg-white'] {
+  background: var(--wbx-glass-heavy) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark aside[class*='lg:w-64'] [class*='from-white'][class*='to-sky-50'] {
+  background: linear-gradient(
+    90deg,
+    var(--wbx-surface),
+    rgba(14, 165, 233, 0.06)
+  ) !important;
+}
+
+html.dark button.bg-sky-50.text-sky-800,
+html.dark .bg-sky-50.text-sky-800.font-semibold {
+  background-color: var(--wbx-accent-bg-strong) !important;
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark button.text-gray-700.hover\:bg-gray-50,
+html.dark button.hover\:bg-gray-50.text-gray-700 {
+  color: var(--wbx-text-secondary) !important;
+}
+
+html.dark button.text-gray-700.hover\:bg-gray-50:hover {
+  background-color: var(--wbx-surface-hover) !important;
+  color: var(--wbx-text) !important;
+}
+
+/* Opt-in management nested panels */
+html.dark .bg-white\/60 {
+  background-color: rgba(20, 28, 46, 0.65) !important;
+}
+
+html.dark .rounded-2xl.bg-gray-200\/80,
+html.dark .rounded-2xl.bg-gray-200\/80.border {
+  background-color: var(--wbx-surface-raised) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .bg-emerald-100.border-emerald-200 {
+  background-color: rgba(6, 95, 70, 0.4) !important;
+  border-color: rgba(52, 211, 153, 0.35) !important;
+}
+
+html.dark .bg-emerald-100.border-emerald-200.text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+/* Manage — manager permissions */
+html.dark .rounded-xl.border.border-sky-100\/90.bg-sky-50\/40 {
+  background-color: var(--wbx-accent-bg) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark label.border-sky-300.bg-white.text-sky-900,
+html.dark label[class*='border-sky-300'][class*='bg-white'] {
+  background-color: var(--wbx-surface) !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark label.border-gray-200.bg-white\/80 {
+  background-color: var(--wbx-surface-raised) !important;
+  border-color: var(--wbx-border) !important;
+  color: var(--wbx-text-secondary) !important;
+}
+
+html.dark label.hover\:border-sky-200:hover {
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+/* ── /live-chat & /history (agent chat layout) ──────────────────────────── */
+html.dark [class*='from-gray-100'][class*='to-gray-50'] {
+  background: linear-gradient(
+    to bottom,
+    var(--wbx-surface-raised),
+    var(--wbx-surface)
+  ) !important;
+}
+
+html.dark .text-sky-900\/80,
+html.dark button.text-sky-900\/80 {
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark button.text-sky-900\/80.hover\:bg-white\/70:hover,
+html.dark .hover\:bg-white\/70:hover {
+  background-color: var(--wbx-surface-hover) !important;
+}
+
+html.dark .shadow-inner {
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+html.dark .fixed.top-4[class*='bg-white'][class*='ring-sky-400'] {
+  background-color: var(--wbx-glass-heavy) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .fixed.top-4 .font-bold.text-sky-700 {
+  color: var(--wbx-accent) !important;
+}
+
+html.dark .hover\:bg-gray-100.hover\:text-gray-900:hover {
+  background-color: var(--wbx-surface-hover) !important;
+  color: var(--wbx-text) !important;
+}
+
+html.dark .hover\:border-gray-200:hover {
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .ring-1.ring-sky-400\/25 {
+  --tw-ring-color: rgba(56, 189, 248, 0.2) !important;
+}
+
+/* Outgoing message composer bar */
+html.dark .border-t.border-gray-200\/80.bg-white\/95.backdrop-blur-md,
+html.dark [class*='shadow-\[0_-4px'] {
+  background-color: var(--wbx-glass-heavy) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+/* Insert template popover */
+html.dark .motion-pop.absolute.bottom-full.bg-white {
+  background-color: var(--wbx-surface) !important;
+}
+
+html.dark .border-b.border-red-100.bg-red-50\/50 {
+  background-color: rgba(127, 29, 29, 0.25) !important;
+  border-color: var(--wbx-border-soft) !important;
+}
+
+/* ── /agent-dashboard (AgentHomePage + components) ──────────────────────── */
+html.dark .text-emerald-600 {
+  color: #6ee7b7 !important;
+}
+
+html.dark .motion-card-rich > [class*='absolute inset-0'][class*='bg-gradient-to-br'][class*='opacity-80'] {
+  opacity: 0.22 !important;
+}
+
+html.dark .group.overflow-hidden.rounded-2xl.border img {
+  opacity: 0.92;
+}
+
+/* Agent widget cards — keep colorful gradients, soften overlay */
+html.dark [class*='from-sky-500'][class*='via-sky-600'][class*='opacity-\[0\.92\]'],
+html.dark [class*='from-teal-500'][class*='opacity-\[0\.92\]'],
+html.dark [class*='from-violet-500'][class*='opacity-\[0\.92\]'],
+html.dark [class*='from-rose-500'][class*='opacity-\[0\.92\]'] {
+  opacity: 0.88 !important;
+}
+
+html.dark [class*='from-black\/25'][class*='via-transparent'] {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.35),
+    transparent,
+    rgba(255, 255, 255, 0.04)
+  ) !important;
+}
+
+/* Live chat — insert popover & quick actions */
+html.dark [class*='from-slate-50'][class*='to-sky-50\/60'] {
+  background: linear-gradient(
+    90deg,
+    var(--wbx-surface-raised),
+    rgba(14, 165, 233, 0.08)
+  ) !important;
+}
+
+html.dark .text-xs.font-bold.text-sky-700.uppercase {
+  color: var(--wbx-accent) !important;
+}
+
+html.dark button.hover\:bg-sky-50\/80.border-2.border-gray-100,
+html.dark button[class*='hover:bg-sky-50'][class*='border-gray-100'] {
+  background-color: var(--wbx-surface) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark button.hover\:bg-sky-50\/80.border-2.border-gray-100:hover,
+html.dark button[class*='hover:bg-sky-50']:hover {
+  background-color: var(--wbx-surface-hover) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+html.dark .inline-flex.items-center.gap-2.bg-white.border-2.border-gray-200\/90.text-sky-800 {
+  background-color: var(--wbx-surface) !important;
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark .inline-flex.items-center.gap-2.bg-white.border-2.border-gray-200\/90.text-sky-800:hover {
+  background-color: var(--wbx-accent-bg) !important;
+}
+
+/* Manage — agents list & forms */
+html.dark .text-red-700 {
+  color: #fca5a5 !important;
+}
+
+html.dark .bg-gray-50\/80.hover\:bg-white,
+html.dark input.bg-gray-50\/80 {
+  background-color: var(--wbx-surface-raised) !important;
+}
+
+html.dark input.bg-gray-50\/80:hover,
+html.dark input.bg-gray-50\/80:focus {
+  background-color: var(--wbx-surface) !important;
+}
+
+html.dark button.hover\:bg-sky-50\/80.hover\:border-sky-200\/70 {
+  color: var(--wbx-text-secondary) !important;
+}
+
+html.dark button.hover\:bg-sky-50\/80:hover {
+  background-color: var(--wbx-accent-bg) !important;
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark .hover\:border-sky-100\/60:hover {
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Waabizx brand "W" logo — all pages (headers, sidebars, auth, cards)
+   ═══════════════════════════════════════════════════════════════════════════ */
+html.dark div[class*='from-sky-500'][class*='via-sky-600'][class*='to-blue'].rounded-xl,
+html.dark div[class*='from-sky-500'][class*='via-sky-600'][class*='to-blue'].rounded-2xl,
+html.dark div[class*='from-sky-500'][class*='to-blue-700'].rounded-xl,
+html.dark div[class*='from-sky-500'][class*='to-blue-800'].rounded-2xl,
+html.dark div[class*='from-sky-500'][class*='to-blue-900'].rounded-xl,
+html.dark .inline-flex[class*='from-sky-500'][class*='to-blue-700'].rounded-xl,
+html.dark .inline-flex[class*='from-sky-500'][class*='to-blue-700'].rounded-2xl,
+html.dark .mx-auto[class*='from-sky-500'][class*='to-blue-700'].rounded-xl,
+html.dark .mb-4.inline-flex[class*='from-sky-500'][class*='to-blue-700'] {
+  background: linear-gradient(145deg, #38bdf8 0%, #0ea5e9 42%, #1d4ed8 100%) !important;
+  box-shadow:
+    0 4px 16px rgba(14, 165, 233, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+html.dark div[class*='from-sky-500'][class*='via-sky-600'][class*='to-blue'].ring-2,
+html.dark div[class*='from-sky-500'][class*='to-blue-700'].ring-2,
+html.dark div[class*='from-sky-500'][class*='to-blue-900'].ring-2,
+html.dark .inline-flex[class*='from-sky-500'][class*='ring-white'],
+html.dark div[class*='from-sky-500'][class*='ring-white\/80'],
+html.dark div[class*='from-sky-500'][class*='ring-white\/30'] {
+  --tw-ring-color: rgba(56, 189, 248, 0.55) !important;
+  box-shadow:
+    0 4px 16px rgba(14, 165, 233, 0.38),
+    0 0 0 2px rgba(56, 189, 248, 0.42) !important;
+}
+
+html.dark aside.bg-sky-950 div[class*='from-sky-500'][class*='ring-sky-400'] {
+  background: linear-gradient(145deg, #38bdf8 0%, #0ea5e9 50%, #1e3a8a 100%) !important;
+  box-shadow:
+    0 4px 18px rgba(14, 165, 233, 0.35),
+    0 0 0 2px rgba(125, 211, 252, 0.28) !important;
+}
+
+html.dark div[class*='from-sky-500'] > span.text-white.font-bold,
+html.dark div[class*='from-sky-500'] > span.text-white.font-semibold,
+html.dark .inline-flex[class*='from-sky-500'].text-white.font-bold,
+html.dark [class*='from-sky-500'][class*='to-blue'] span.text-white.font-bold,
+html.dark [class*='from-sky-500'][class*='to-blue'] span.text-white.font-semibold {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── /broadcast ─────────────────────────────────────────────────────────── */
+html.dark .rounded-2xl.border.border-gray-100\/90.bg-white\/80 {
+  background-color: var(--wbx-glass) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .relative.overflow-hidden.rounded-2xl.border.border-gray-100\/90.bg-white.shadow-xl,
+html.dark .rounded-2xl.border.border-gray-100\/90.bg-white.p-6,
+html.dark .rounded-2xl.border.border-gray-100\/90.bg-white.p-6.md\:p-8 {
+  background-color: var(--wbx-surface) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .w-10.h-10.rounded-full.bg-gray-200 {
+  background-color: var(--wbx-surface-raised) !important;
+  color: var(--wbx-text-muted) !important;
+}
+
+html.dark .w-10.h-10.rounded-full.bg-sky-600,
+html.dark .flex-1.h-1.rounded-full.bg-sky-600 {
+  background-color: var(--wbx-accent-soft) !important;
+}
+
+html.dark [class*='from-white'][class*='via-sky-50'][class*='to-slate-50'] {
+  background: linear-gradient(
+    to bottom right,
+    var(--wbx-surface),
+    rgba(14, 165, 233, 0.08),
+    var(--wbx-surface-raised)
+  ) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .shadow-inner.ring-1.ring-sky-100\/50 {
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+html.dark input.focus\:bg-white:focus,
+html.dark input.focus\:border-sky-300:focus {
+  background-color: var(--wbx-surface) !important;
+  border-color: var(--wbx-accent-soft) !important;
+}
+
+html.dark .border-2.border-gray-100.bg-gray-50\/80 {
+  background-color: var(--wbx-surface-raised) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .animate-pulse.border.border-gray-100.bg-gradient-to-br.from-gray-50 {
+  background: linear-gradient(
+    to bottom right,
+    var(--wbx-surface-raised),
+    var(--wbx-surface)
+  ) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .rounded-full.bg-gray-200,
+html.dark .rounded-xl.bg-gray-100 {
+  background-color: var(--wbx-border-strong) !important;
+}
+
+html.dark .border-2.border-dashed.border-gray-200.bg-gradient-to-b.from-slate-50\/80 {
+  background: linear-gradient(
+    to bottom,
+    var(--wbx-surface-raised),
+    var(--wbx-surface)
+  ) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .rounded-2xl.bg-sky-100.text-sky-600.shadow-inner {
+  background-color: var(--wbx-accent-bg-strong) !important;
+  color: var(--wbx-accent) !important;
+}
+
+html.dark .ring-1.ring-sky-200\/60 {
+  --tw-ring-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+html.dark .rounded-2xl.border.border-amber-100.bg-amber-50\/50 {
+  background-color: rgba(120, 53, 15, 0.28) !important;
+  border-color: rgba(251, 191, 36, 0.3) !important;
+}
+
+html.dark .font-semibold.text-amber-900 {
+  color: #fcd34d !important;
+}
+
+html.dark .underline.decoration-sky-300 {
+  text-decoration-color: rgba(56, 189, 248, 0.5) !important;
+}
+
+html.dark .border-sky-500.bg-gradient-to-br.from-sky-50,
+html.dark button.border-sky-500[class*='from-sky-50'] {
+  background: linear-gradient(
+    to bottom right,
+    rgba(14, 165, 233, 0.16),
+    var(--wbx-surface),
+    rgba(30, 58, 138, 0.12)
+  ) !important;
+  border-color: var(--wbx-accent-soft) !important;
+  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.15) !important;
+}
+
+html.dark button.border-gray-100.bg-white.hover\:border-sky-200 {
+  background-color: var(--wbx-surface) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark button.border-gray-100.bg-white.hover\:border-sky-200:hover {
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+html.dark .border-gray-200.bg-white.text-transparent {
+  background-color: var(--wbx-surface-raised) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .border-sky-500.bg-sky-500.text-white {
+  background-color: var(--wbx-accent-soft) !important;
+  border-color: var(--wbx-accent) !important;
+}
+
+/* WhatsApp-style template preview bubble */
+html.dark .bg-\[\#e7ffdb\] {
+  background-color: rgba(6, 95, 70, 0.32) !important;
+  border-color: rgba(52, 211, 153, 0.2) !important;
+}
+
+html.dark .text-emerald-900\/60 {
+  color: rgba(110, 231, 183, 0.65) !important;
+}
+
+html.dark .ring-black\/\[0\.04\] {
+  --tw-ring-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+html.dark .text-green-700 {
+  color: #6ee7b7 !important;
+}
+
+html.dark code.rounded.bg-sky-50.text-sky-800 {
+  background-color: var(--wbx-accent-bg) !important;
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark .focus-visible\:ring-offset-2:focus-visible {
+  --tw-ring-offset-color: var(--wbx-bg-elevated) !important;
+}
+
+html.dark .border-sky-600.bg-sky-50.text-sky-900 {
+  background-color: var(--wbx-accent-bg-strong) !important;
+  border-color: var(--wbx-accent-soft) !important;
+  color: var(--wbx-accent-muted) !important;
+}
+
+html.dark .border-gray-200.hover\:bg-sky-50\/40.text-gray-700:hover {
+  background-color: var(--wbx-accent-bg) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  color: var(--wbx-text-secondary) !important;
+}
+
+html.dark .border-dashed.border-sky-200\/90.bg-gradient-to-br.from-sky-50\/50 {
+  background: linear-gradient(
+    to bottom right,
+    rgba(14, 165, 233, 0.1),
+    var(--wbx-surface)
+  ) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+html.dark .ring-1.ring-sky-100\/60 {
+  --tw-ring-color: rgba(56, 189, 248, 0.2) !important;
+}
+
+html.dark [class*='from-sky-50'][class*='to-slate-50'].border-b {
+  background: linear-gradient(
+    90deg,
+    rgba(14, 165, 233, 0.12),
+    var(--wbx-surface-raised)
+  ) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark thead.bg-sky-50\/50 {
+  background-color: var(--wbx-surface-raised) !important;
+}
+
+html.dark tr.hover\:bg-sky-50\/40:hover {
+  background-color: var(--wbx-accent-bg) !important;
+}
+
+html.dark .text-xs.text-sky-800\/90.bg-white\/80 {
+  background-color: var(--wbx-surface) !important;
+  color: var(--wbx-accent-muted) !important;
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .bg-amber-100.text-amber-900 {
+  background-color: rgba(120, 53, 15, 0.4) !important;
+  color: #fcd34d !important;
+}
+
+/* ── /manage → Analytics ────────────────────────────────────────────────── */
+html.dark .text-xs.bg-gray-50\/90 {
+  background-color: var(--wbx-surface-raised) !important;
+}
+
+html.dark .bg-gradient-to-br.from-sky-50\/90.to-white,
+html.dark .bg-gradient-to-br.from-amber-50\/80.to-white,
+html.dark .bg-gradient-to-br.from-orange-50\/80.to-white,
+html.dark .bg-gradient-to-br.from-red-50\/70.to-white {
+  background: linear-gradient(
+    to bottom right,
+    var(--wbx-accent-bg),
+    var(--wbx-surface)
+  ) !important;
+}
+
+html.dark .border.border-sky-100\/70 {
+  border-color: var(--wbx-border) !important;
+}
+
+html.dark .border.border-amber-100\/70 {
+  border-color: rgba(251, 191, 36, 0.25) !important;
+}
+
+html.dark .border.border-orange-100\/70 {
+  border-color: rgba(251, 146, 60, 0.25) !important;
+}
+
+html.dark .border.border-red-100\/70 {
+  border-color: rgba(248, 113, 113, 0.25) !important;
+}
+
+html.dark .ring-1.ring-sky-50\/80 {
+  --tw-ring-color: var(--wbx-border-soft) !important;
+}
+
+html.dark .recharts-default-legend .recharts-legend-item-text {
+  color: var(--wbx-text-secondary) !important;
+}
+
+html.dark .recharts-layer.recharts-cartesian-axis-tick text {
+  fill: var(--wbx-text-muted) !important;
+}

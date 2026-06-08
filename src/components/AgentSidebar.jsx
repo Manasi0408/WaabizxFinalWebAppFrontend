@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import BrandLogoMark from '../components/BrandLogoMark';
 import { Link, useLocation } from "react-router-dom";
 
 const iconClass = "w-5 h-5 flex-shrink-0";
@@ -52,10 +53,7 @@ function AgentSidebar({ open = true }) {
       className={`bg-sky-950 text-white border-r border-sky-900 h-full shrink-0 flex flex-col items-center py-6 transition-all duration-300 overflow-hidden ${
         open ? "w-20" : "w-0 md:w-20"
       }`}
-    >
-      <div className="w-10 h-10 mb-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 shadow-lg shadow-sky-900/40 ring-2 ring-sky-400/30">
-        <span className="text-white font-bold text-lg">W</span>
-      </div>
+    ><div className="mb-10"><BrandLogoMark size="md" tone="contrast" /></div>
 
       <nav className="flex flex-col items-center gap-1 w-full px-2">
         {navItems.map((item) => {

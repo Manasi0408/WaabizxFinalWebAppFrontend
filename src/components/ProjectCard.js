@@ -9,10 +9,35 @@ function statusStyles(status) {
   return { dot: "bg-slate-400", pill: "bg-slate-100 text-slate-700 ring-slate-200/80" };
 }
 
-function ProjectCard({ project }) {
-  const role = project.owner_role || project.role;
+function ProjectCard({ project, onRemove }) {
   const status = project.status || "N/A";
   const { dot, pill } = statusStyles(status);
+  const statusNormalized = String(status).toLowerCase();
+  const isApproved =
+    project.whatsappApproved === true ||
+    ["approved", "active", "live", "verified"].includes(statusNormalized);
+  const activePlan =
+    project.activePlan ||
+    project.active_plan ||
+    project.planName ||
+    project.plan_name ||
+    "FREE FOREVER";
+  const billingNum =
+    project.paymentPhone != null && String(project.paymentPhone).trim() !== ""
+      ? String(project.paymentPhone).trim()
+      : null;
+  const waNum =
+    project.whatsappNumber != null && String(project.whatsappNumber).trim() !== ""
+      ? String(project.whatsappNumber).trim()
+      : null;
+  const projectNumber =
+    waNum ||
+    billingNum ||
+    project.whatsapp_number ||
+    project.phone ||
+    project.mobileNumber ||
+    project.mobile_number ||
+    "--";
   const created = project.created_at ? new Date(project.created_at).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -37,17 +62,42 @@ function ProjectCard({ project }) {
             <h3 className="truncate text-base font-bold tracking-tight text-gray-900 md:text-[17px]">
               {project.project_name}
             </h3>
-            {role && (
-              <span className="shrink-0 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800 ring-1 ring-sky-200/80">
-                {role}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Status</p>
+              <span className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${pill}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden />
+                {isApproved ? "Verified" : status}
               </span>
-            )}
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Active plan</p>
+              <p className="mt-1 text-sm font-bold text-sky-800">{String(activePlan).toUpperCase()}</p>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Number</p>
+            <p className="mt-1 text-[22px] leading-none font-semibold text-emerald-700 tabular-nums">
+              {projectNumber}
+            </p>
+            {billingNum && waNum && billingNum !== waNum ? (
+              <p className="mt-1.5 text-[11px] font-medium text-gray-500">
+                Payments (Razorpay): <span className="tabular-nums text-gray-700">{billingNum}</span>
+              </p>
+            ) : billingNum && !waNum ? (
+              <p className="mt-1.5 text-[11px] font-medium text-gray-500">
+                Billing / payments number
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${pill}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden />
-              {status}
+              {isApproved ? "Approved" : "Not approved"}
             </span>
           </div>
 
@@ -58,14 +108,22 @@ function ProjectCard({ project }) {
             <span>Created {created}</span>
           </div>
 
-          <div className="mt-5 flex items-center justify-between border-t border-gray-100/90 pt-4">
-            <span className="text-xs font-semibold text-gray-400">Workspace</span>
-            <span className="inline-flex items-center gap-1 text-sm font-bold text-sky-600 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-sky-700">
-              Open
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </span>
+          <div className="mt-5 flex gap-2 border-t border-gray-100/90 pt-4">
+            <button
+              type="button"
+              className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-sky-300 hover:text-sky-700"
+            >
+              View
+            </button>
+            {typeof onRemove === "function" ? (
+              <button
+                type="button"
+                onClick={onRemove}
+                className="shrink-0 rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition-all hover:border-rose-300 hover:bg-rose-50"
+              >
+                Remove
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

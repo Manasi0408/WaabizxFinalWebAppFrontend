@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import BrandLogoMark from '../components/BrandLogoMark';
 import { useNavigate, Link } from 'react-router-dom';
-import { getProfile, isAuthenticated, logout } from '../services/authService';
+import { getProfile, isAuthenticated, logout, readSessionUser } from '../services/authService';
 import { getNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import { getTemplates, getMetaTemplates } from '../services/templateService';
 import MainSidebarNav from '../components/MainSidebarNav';
+import AppShellSidebar from '../components/AppShellSidebar';
+import AdminHeaderProjectSwitch from '../components/AdminHeaderProjectSwitch';
+import HeaderRightActions from '../components/HeaderRightActions';
 import {
   uploadCSV,
   getBroadcastContacts,
@@ -14,7 +18,7 @@ import { startCampaign } from '../services/campaignService';
 
 function Broadcast() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -394,7 +398,7 @@ function Broadcast() {
   };
 
   const userName = user?.name || 'User';
-  const userAvatar = user?.avatar || '';
+  const userAvatar = user?.avatar || readSessionUser()?.avatar || '';
   const userInitial = userName.charAt(0).toUpperCase();
 
   if (loading) {
@@ -423,10 +427,7 @@ function Broadcast() {
             </svg>
           </button>
 
-          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 ring-2 ring-white">
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
+          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"><BrandLogoMark size="md" />
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent hidden sm:block">
               Waabizx
             </h1>
@@ -434,9 +435,10 @@ function Broadcast() {
 
           <span className="text-gray-300 hidden md:block">|</span>
           <h2 className="text-lg font-semibold text-sky-700 hidden md:block tracking-tight">Broadcast</h2>
+          <AdminHeaderProjectSwitch />
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4">
+        <HeaderRightActions>
           <div className="relative" ref={notificationRef}>
             <button
               onClick={async () => {
@@ -585,18 +587,14 @@ function Broadcast() {
               <span className="text-white font-semibold text-sm">{userInitial}</span>
             )}
           </button>
-        </div>
+        </HeaderRightActions>
       </header>
 
       <div className="flex flex-1 min-h-0">
         {/* Collapsible Sidebar */}
-        <aside
-          className={`bg-sky-950 text-white border-r border-sky-900 h-full shrink-0 flex flex-col overflow-hidden transition-all duration-300 ${
-            sidebarOpen ? 'w-20' : 'w-0 md:w-20'
-          }`}
-        >
-          <MainSidebarNav />
-        </aside>
+        <AppShellSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+          <MainSidebarNav onNavigate={() => setSidebarOpen(false)} />
+        </AppShellSidebar>
 
         {/* Main Content */}
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">

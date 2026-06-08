@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import BrandLogoMark from '../components/BrandLogoMark';
 import { useNavigate, Link } from 'react-router-dom';
-import { getProfile, isAuthenticated, logout } from '../services/authService';
+import { getProfile, isAuthenticated, logout, readSessionUser } from '../services/authService';
 import { getNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import {
   getCampaigns,
@@ -14,12 +15,15 @@ import {
   getCampaignAudience
 } from '../services/campaignService';
 import MainSidebarNav from '../components/MainSidebarNav';
+import AppShellSidebar from '../components/AppShellSidebar';
+import AdminHeaderProjectSwitch from '../components/AdminHeaderProjectSwitch';
+import HeaderRightActions from '../components/HeaderRightActions';
 import { uploadCSV } from '../services/broadcastService';
 // Campaign creation now uses parse-only CSV upload (no heavy contact loading)
 
 function Campaigns() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -131,6 +135,16 @@ function Campaigns() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
+
+  // Keep campaign stats (delivered/read) fresh while page is open.
+  useEffect(() => {
+    if (!isAuthenticated()) return undefined;
+    const interval = setInterval(() => {
+      fetchCampaigns();
+    }, 7000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.status, filters.type, filters.page]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -319,6 +333,15 @@ function Campaigns() {
         delivered: details.stats?.delivered || details.delivered || campaign.delivered || 0,
         read: details.stats?.read || details.read || campaign.read || 0,
         failed: details.stats?.failed || details.failed || campaign.failed || 0,
+        audience:
+          details.audience ??
+          campaign.totalRecipients ??
+          campaign.total ??
+          0,
+        totalCreditUsage:
+          details.totalCreditUsage ??
+          campaign.totalCreditUsage ??
+          0,
         stats: details.stats || {
           total: details.total || campaign.total || 0,
           sent: details.sent || campaign.sent || 0,
@@ -434,6 +457,7 @@ function Campaigns() {
 
   const userName = user?.name || 'User';
   const userInitial = userName.charAt(0).toUpperCase();
+  const headerAvatar = user?.avatar || readSessionUser()?.avatar || '';
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
@@ -450,10 +474,7 @@ function Campaigns() {
             </svg>
           </button>
 
-          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 ring-2 ring-white">
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
+          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"><BrandLogoMark size="md" />
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent hidden sm:block">
               Waabizx
             </h1>
@@ -461,9 +482,10 @@ function Campaigns() {
 
           <span className="text-gray-300 hidden md:block">|</span>
           <h2 className="text-lg font-semibold text-sky-700 hidden md:block tracking-tight">Campaigns</h2>
+          <AdminHeaderProjectSwitch />
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4">
+        <HeaderRightActions>
           {/* Notifications */}
           <div className="relative" ref={notificationRef}>
             <button
@@ -597,18 +619,22 @@ function Campaigns() {
           <button
             type="button"
             onClick={() => navigate('/settings')}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none overflow-hidden"
           >
-            <span className="text-white font-semibold text-sm">{userInitial}</span>
+            {headerAvatar ? (
+              <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-semibold text-sm">{userInitial}</span>
+            )}
           </button>
-        </div>
+        </HeaderRightActions>
       </header>
 
       <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
-        <aside className={`bg-sky-950 text-white border-r border-sky-900 h-full shrink-0 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'w-20' : 'w-0 md:w-20'}`}>
-          <MainSidebarNav />
-        </aside>
+        <AppShellSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+          <MainSidebarNav onNavigate={() => setSidebarOpen(false)} />
+        </AppShellSidebar>
 
         {/* Main Content */}
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">
@@ -625,32 +651,9 @@ function Campaigns() {
             </div>
           )}
 
-          {/* Header with Create Button */}
-          <div className="motion-enter mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">Campaigns</h2>
-              <p className="text-gray-600 text-sm md:text-base">Manage and track your WhatsApp campaigns</p>
-            </div>
-            <button
-              onClick={() => {
-                setFormData({ 
-                  name: '', 
-                  template_name: '', 
-                  template_language: 'en_US', 
-                  schedule_time: null,
-                  audience: [{ phone: '', var1: '', var2: '', var3: '', var4: '', var5: '' }] 
-                });
-                setShowCreateModal(true);
-                setError('');
-              }}
-              className="group relative overflow-hidden shrink-0 bg-gradient-to-r from-sky-600 via-sky-500 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-sky-600/30 hover:shadow-xl hover:shadow-sky-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/15 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" aria-hidden />
-              <svg className="w-5 h-5 relative" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="relative">Create Campaign</span>
-            </button>
+          <div className="motion-enter mb-6 md:mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">Campaigns</h2>
+            <p className="text-gray-600 text-sm md:text-base">Manage and track your WhatsApp campaigns</p>
           </div>
 
           {/* Filters */}
@@ -699,16 +702,7 @@ function Campaigns() {
                 <svg className="w-16 h-16 text-sky-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
-                <p className="text-gray-600 mb-4">No campaigns found</p>
-                <button
-                  onClick={() => {
-                    setFormData({ name: '', description: '', type: 'broadcast', message: '', scheduledAt: '' });
-                    setShowCreateModal(true);
-                  }}
-                  className="bg-sky-600 text-white px-6 py-2.5 rounded-xl hover:bg-sky-700 transition-all duration-300 shadow-md shadow-sky-600/25 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] font-medium"
-                >
-                  Create Your First Campaign
-                </button>
+                <p className="text-gray-600">No campaigns found. Start a broadcast from Contacts → Import → Broadcast.</p>
               </div>
             ) : (
               <>
@@ -1350,6 +1344,19 @@ function Campaigns() {
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                <div className="bg-indigo-50 p-4 rounded-xl ring-1 ring-indigo-100/80">
+                  <label className="text-sm font-medium text-gray-600">Audience</label>
+                  <p className="text-2xl font-bold text-indigo-600">{campaignDetails.audience ?? 0}</p>
+                </div>
+                <div className="bg-amber-50 p-4 rounded-xl ring-1 ring-amber-100/80">
+                  <label className="text-sm font-medium text-gray-600">Total Credit Usage</label>
+                  <p className="text-2xl font-bold text-amber-700">
+                    ₹{Number(campaignDetails.totalCreditUsage ?? 0).toLocaleString('en-IN', {
+                      minimumFractionDigits: 3,
+                      maximumFractionDigits: 3
+                    })}
+                  </p>
+                </div>
                 <div className="bg-sky-50 p-4 rounded-xl ring-1 ring-sky-100/80 motion-hover-lift">
                   <label className="text-sm font-medium text-gray-600">Total</label>
                   <p className="text-2xl font-bold text-sky-600">{campaignDetails.total || 0}</p>

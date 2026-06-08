@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
+import BrandLogoMark from '../components/BrandLogoMark';
 import { useNavigate, Link } from 'react-router-dom';
-import { getProfile, isAuthenticated, logout } from '../services/authService';
+import { getProfile, isAuthenticated, logout, readSessionUser } from '../services/authService';
 import { getNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import { getOverview, getCampaignAnalytics, getMessageAnalytics, getContactAnalytics, getCostAnalytics } from '../services/analyticsService';
 import { getCampaigns } from '../services/campaignService';
 import MainSidebarNav from '../components/MainSidebarNav';
+import AppShellSidebar from '../components/AppShellSidebar';
+import AdminHeaderProjectSwitch from '../components/AdminHeaderProjectSwitch';
+import HeaderRightActions from '../components/HeaderRightActions';
 
 function Analytics() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -282,6 +286,7 @@ function Analytics() {
 
   const userName = user?.name || 'User';
   const userInitial = userName.charAt(0).toUpperCase();
+  const headerAvatar = user?.avatar || readSessionUser()?.avatar || '';
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
@@ -298,10 +303,7 @@ function Analytics() {
             </svg>
           </button>
 
-          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 ring-2 ring-white">
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
+          <Link to="/dashboard" className="flex items-center gap-3 transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shrink-0"><BrandLogoMark size="md" />
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent hidden sm:block">
               Waabizx
             </h1>
@@ -309,49 +311,10 @@ function Analytics() {
 
           <span className="text-gray-300 hidden md:block shrink-0">|</span>
           <h2 className="text-lg font-semibold text-sky-700 hidden md:block tracking-tight">Analytics</h2>
+          <AdminHeaderProjectSwitch />
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 md:gap-4">
-          <div
-            className="flex items-center gap-1 rounded-xl border border-gray-200/80 bg-gray-50/90 p-1 shadow-sm ring-1 ring-gray-100/80"
-            role="group"
-            aria-label="Time range"
-          >
-            <button
-              type="button"
-              onClick={() => setTimeRange('day')}
-              className={`px-3 py-2 text-sm font-semibold rounded-lg transition-all duration-200 active:scale-[0.98] ${
-                timeRange === 'day'
-                  ? 'bg-white text-sky-700 shadow-md shadow-sky-500/10 ring-1 ring-sky-200/60'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/70'
-              }`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => setTimeRange('week')}
-              className={`px-3 py-2 text-sm font-semibold rounded-lg transition-all duration-200 active:scale-[0.98] ${
-                timeRange === 'week'
-                  ? 'bg-white text-sky-700 shadow-md shadow-sky-500/10 ring-1 ring-sky-200/60'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/70'
-              }`}
-            >
-              Week
-            </button>
-            <button
-              type="button"
-              onClick={() => setTimeRange('month')}
-              className={`px-3 py-2 text-sm font-semibold rounded-lg transition-all duration-200 active:scale-[0.98] ${
-                timeRange === 'month'
-                  ? 'bg-white text-sky-700 shadow-md shadow-sky-500/10 ring-1 ring-sky-200/60'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/70'
-              }`}
-            >
-              Month
-            </button>
-          </div>
-
+        <HeaderRightActions className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 md:gap-4">
           <div className="relative" ref={notificationRef}>
             <button
               type="button"
@@ -488,18 +451,22 @@ function Analytics() {
           <button
             type="button"
             onClick={() => navigate('/settings')}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/35 hover:shadow-lg hover:ring-2 ring-sky-300/60 hover:scale-[1.03] transition-all duration-200 focus:outline-none overflow-hidden"
           >
-            <span className="text-white font-semibold text-sm">{userInitial}</span>
+            {headerAvatar ? (
+              <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-semibold text-sm">{userInitial}</span>
+            )}
           </button>
-        </div>
+        </HeaderRightActions>
       </header>
 
       <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
-        <aside className={`bg-sky-950 text-white border-r border-sky-900 h-full shrink-0 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'w-20' : 'w-0 md:w-20'}`}>
-          <MainSidebarNav />
-        </aside>
+        <AppShellSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+          <MainSidebarNav onNavigate={() => setSidebarOpen(false)} />
+        </AppShellSidebar>
 
         {/* Main Content */}
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">
@@ -509,9 +476,50 @@ function Analytics() {
             <div className="absolute -bottom-36 -left-24 w-[20rem] h-[20rem] bg-blue-400/25 motion-page-blob motion-page-blob--b" />
           </div>
           <div className="relative z-0">
-          <div className="motion-enter mb-6 md:mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">Analytics</h2>
-            <p className="text-gray-600 text-sm md:text-base">Track your WhatsApp messaging performance and insights</p>
+          <div className="motion-enter mb-6 md:mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="min-w-0">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">Analytics</h2>
+              <p className="text-gray-600 text-sm md:text-base">Track your WhatsApp messaging performance and insights</p>
+            </div>
+            <div
+              className="flex shrink-0 items-center gap-1 self-start rounded-xl border border-gray-200/80 bg-white/90 p-1 shadow-sm ring-1 ring-gray-100/80 sm:mt-1"
+              role="group"
+              aria-label="Time range"
+            >
+              <button
+                type="button"
+                onClick={() => setTimeRange('day')}
+                className={`px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm font-semibold rounded-lg transition-all duration-200 active:scale-[0.98] ${
+                  timeRange === 'day'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => setTimeRange('week')}
+                className={`px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm font-semibold rounded-lg transition-all duration-200 active:scale-[0.98] ${
+                  timeRange === 'week'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Week
+              </button>
+              <button
+                type="button"
+                onClick={() => setTimeRange('month')}
+                className={`px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm font-semibold rounded-lg transition-all duration-200 active:scale-[0.98] ${
+                  timeRange === 'month'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Month
+              </button>
+            </div>
           </div>
 
           {loadingAnalytics && (

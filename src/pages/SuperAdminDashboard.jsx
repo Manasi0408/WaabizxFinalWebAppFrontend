@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../services/authService";
+import HeaderRightActions from "../components/HeaderRightActions";
+import BrandLogoMark from "../components/BrandLogoMark";
+import SuperAdminPlansPanel from "../components/SuperAdminPlansPanel";
+import SuperAdminLeadsPanel from "../components/SuperAdminLeadsPanel";
+import SuperAdminDemoBookingsPanel from "../components/SuperAdminDemoBookingsPanel";
 
 function SuperAdminDashboard() {
   const navigate = useNavigate();
@@ -11,6 +16,7 @@ function SuperAdminDashboard() {
   const [loadingAdmins, setLoadingAdmins] = useState(false);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("admins");
 
   const user = (() => {
     try {
@@ -81,16 +87,14 @@ function SuperAdminDashboard() {
       <header className="motion-header-enter shrink-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-200/80 px-4 md:px-8 py-3.5 md:py-4 flex justify-between items-center shadow-sm shadow-gray-200/50">
         <div className="flex items-center gap-4 min-w-0">
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 ring-2 ring-white" aria-hidden>
-              <span className="text-white font-bold text-lg">W</span>
-            </div>
+            <BrandLogoMark size="md" />
             <h2 className="text-lg font-semibold text-sky-700 hidden md:block tracking-tight">SuperAdmin</h2>
           </div>
           <span className="text-gray-300 hidden md:block shrink-0">|</span>
           <p className="text-xs md:text-sm text-gray-500 truncate">View Admins and their uploaded Contacts</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <HeaderRightActions>
           <button
             type="button"
             onClick={() => navigate("/settings")}
@@ -111,7 +115,7 @@ function SuperAdminDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m10 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h8a3 3 0 013 3v1" />
             </svg>
           </button>
-        </div>
+        </HeaderRightActions>
       </header>
 
       <main className="relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">
@@ -141,7 +145,7 @@ function SuperAdminDashboard() {
 
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
                       <span className="bg-gradient-to-r from-gray-900 via-sky-800 to-blue-900 bg-clip-text text-transparent">
-                        Welcome back, {userName}
+                        {userName}, your platform command center
                       </span>
                     </h1>
 
@@ -185,6 +189,60 @@ function SuperAdminDashboard() {
                 </div>
               </section>
 
+              <div className="mb-6 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("admins")}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                    activeTab === "admins"
+                      ? "bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-md"
+                      : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  Admins & contacts
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("plans")}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                    activeTab === "plans"
+                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md"
+                      : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  Plans
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("leads")}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                    activeTab === "leads"
+                      ? "bg-gradient-to-r from-violet-600 to-blue-600 text-white shadow-md"
+                      : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  Website leads
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("demos")}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+                    activeTab === "demos"
+                      ? "bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-md"
+                      : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  Demo bookings
+                </button>
+              </div>
+
+              {activeTab === "plans" ? (
+                <SuperAdminPlansPanel />
+              ) : activeTab === "leads" ? (
+                <SuperAdminLeadsPanel />
+              ) : activeTab === "demos" ? (
+                <SuperAdminDemoBookingsPanel />
+              ) : (
               <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-4">
                 {/* Admins card */}
                 <section className="motion-enter motion-delay-1 motion-hover-lift bg-white/95 backdrop-blur-sm border border-gray-100/90 rounded-2xl shadow-lg shadow-gray-200/35 ring-1 ring-gray-100/80 p-4 overflow-hidden">
@@ -276,15 +334,19 @@ function SuperAdminDashboard() {
                       <div className="p-4 md:p-5">
                       <div className="space-y-3 motion-stagger-children">
                           {contacts.slice(0, 200).map((c) => {
-                            const status = String(c.status || "active").toLowerCase();
+                            const displayName = c.displayName || c.name || "Unnamed contact";
+                            const displayPhone = c.displayPhone || c.phone || "Not provided";
+                            const displayEmail = c.displayEmail || c.email || "Not provided";
+                            const displayStatus = c.displayStatus || String(c.status || "active");
+                            const statusKey = String(c.status || "active").toLowerCase();
                             const badgeClass =
-                              status === "active"
+                              statusKey === "active"
                                 ? "bg-emerald-50 text-emerald-800 ring-emerald-200/90"
-                                : "bg-gray-100 text-gray-600 ring-gray-200/80";
-                            const initial = String(c.name || c.phone || c.email || "?")
-                              .trim()
-                              .charAt(0)
-                              .toUpperCase();
+                                : statusKey === "unsubscribed"
+                                  ? "bg-amber-50 text-amber-800 ring-amber-200/90"
+                                  : "bg-gray-100 text-gray-600 ring-gray-200/80";
+                            const initialMatch = String(displayName).match(/[A-Za-z]/);
+                            const initial = (initialMatch ? initialMatch[0] : "C").toUpperCase();
 
                             return (
                               <article
@@ -299,15 +361,19 @@ function SuperAdminDashboard() {
 
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <div className="text-sm font-bold text-gray-900 truncate">{c.name || "—"}</div>
-                                    <div className="mt-0.5 text-xs font-semibold text-gray-500 truncate">{c.phone || "—"}</div>
-                                    <div className="mt-2 text-xs text-gray-600 truncate">{c.email || "—"}</div>
+                                  <div className="min-w-0 space-y-1">
+                                    <div className="text-sm font-bold text-gray-900 truncate">{displayName}</div>
+                                    <div className="text-xs text-gray-600 truncate">
+                                      <span className="font-semibold text-gray-500">Phone:</span> {displayPhone}
+                                    </div>
+                                    <div className="text-xs text-gray-600 truncate">
+                                      <span className="font-semibold text-gray-500">Email:</span> {displayEmail}
+                                    </div>
                                   </div>
 
                                   <div className="shrink-0 inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ring-1">
                                     <span className={`inline-flex items-center ${badgeClass} rounded-full px-2 py-1`}>
-                                      {status}
+                                      {displayStatus}
                                     </span>
                                   </div>
                                 </div>
@@ -321,6 +387,7 @@ function SuperAdminDashboard() {
                   )}
                 </section>
               </div>
+              )}
             </div>
           </div>
         </main>

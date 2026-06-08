@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
+import BrandLogoMark, { BrandLogoWatermark } from '../components/BrandLogoMark';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { login, requestPasswordReset, resetPassword } from '../services/authService';
+import { login, requestPasswordReset, resetPassword, getProfile } from '../services/authService';
+import { getConversationQuota } from '../services/dashboardService';
+import ThemeToggle from '../components/ThemeToggle';
+import PasswordInput from '../components/PasswordInput';
 
 const inputClass =
   'w-full rounded-xl border-2 border-gray-200/90 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition-all placeholder:text-gray-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-500/10 sm:py-3';
@@ -18,6 +22,7 @@ const AUTH_MARQUEE_TAGS = [
 ];
 
 function Login() {
+  const TERMS_FILE_HREF = '/Terms-and-Conditions-Waabizx.pdf';
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState({
@@ -28,6 +33,7 @@ function Login() {
   const showPasswordResetMessage = !!location.state?.passwordReset;
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [forgotOpen, setForgotOpen] = useState(location.pathname === '/login/forgot-password');
   const [forgotStep, setForgotStep] = useState('request'); // request | reset
@@ -37,6 +43,7 @@ function Login() {
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState('');
+  const [forgotInfo, setForgotInfo] = useState('');
 
   const isForgotPasswordRoute = location.pathname === '/login/forgot-password';
 
@@ -71,12 +78,75 @@ function Login() {
       console.log('LOGIN RESPONSE:', response);
 
       if (response.success && response.token) {
-        const user = response.user || { id: response.id, name: response.name, role: response.role };
-
         localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('role', (user.role || response.role || '').toString().toLowerCase());
-        navigate('/dashboard');
+        // Source-of-truth role: profile from backend after token is set.
+        // This avoids stale/partial login payloads.
+        let resolvedUser = response.user || { id: response.id, name: response.name, role: response.role };
+        try {
+          const profile = await getProfile();
+          if (profile && typeof profile === 'object') {
+            resolvedUser = profile;
+          }
+        } catch (_) {
+          // Keep fallback from login response if profile fetch fails.
+        }
+
+        localStorage.setItem('user', JSON.stringify(resolvedUser));
+        const normalizedRole = (resolvedUser.role || response.role || '')
+          .toString()
+          .toLowerCase()
+          .trim()
+          .replace(/-/g, '_')
+          .replace(/\s+/g, '_');
+        localStorage.setItem('role', normalizedRole);
+
+        try {
+          const uid = Number(resolvedUser?.id);
+          let selectedProjectId = null;
+          try {
+            const raw = localStorage.getItem('selectedProject');
+            if (raw) {
+              const sp = JSON.parse(raw);
+              selectedProjectId = sp?.id != null ? String(sp.id) : null;
+            }
+          } catch (_) {
+            /* ignore */
+          }
+          console.log('[Login][WCC] After successful login — what the app will use for WCC', {
+            userId: Number.isInteger(uid) ? uid : null,
+            email: resolvedUser?.email,
+            role: normalizedRole,
+            selectedProjectId,
+            note: 'WCC balance = users.wcc_credits for this userId, loaded via GET /dashboard/:userId with header x-project-id when a project is selected.',
+          });
+          if (Number.isInteger(uid) && uid > 0 && selectedProjectId) {
+            const quota = await getConversationQuota(uid);
+            console.log('[Login][WCC] Quota fetch right after login (same as dashboard WCC card)', {
+              wccCreditsShownInUI: quota.wccCredits,
+              used24hConversations: quota.used,
+              remainingDailySendSlot: quota.remaining,
+              limit: quota.limit,
+            });
+          } else if (Number.isInteger(uid) && uid > 0) {
+            console.log(
+              '[Login][WCC] Skipping quota call — no selectedProject in localStorage yet. Open /admin (or project dashboard) so a project is selected; then WCC loads in the right panel.'
+            );
+          }
+        } catch (wccLogErr) {
+          console.warn('[Login][WCC] Optional quota log failed', wccLogErr?.message || wccLogErr);
+        }
+
+        if (normalizedRole === 'super_admin' || normalizedRole === 'superadmin') {
+          navigate('/super-admin');
+        } else if (normalizedRole === 'admin') {
+          navigate('/project-dashboard');
+        } else if (normalizedRole === 'manager') {
+          navigate('/admin');
+        } else if (normalizedRole === 'agent') {
+          navigate('/agent');
+        } else {
+          navigate('/admin');
+        }
         return;
       }
     } catch (err) {
@@ -89,14 +159,20 @@ function Login() {
   const handleForgotRequest = async (e) => {
     e?.preventDefault?.();
     setForgotError('');
+    setForgotInfo('');
     setForgotLoading(true);
     setForgotOtp('');
     try {
       const response = await requestPasswordReset(forgotEmail);
-      if (response?.otp) {
-        setForgotOtp(String(response.otp));
+      if (response?.success) {
+        setForgotInfo(
+          response?.message ||
+            `If an account exists for ${forgotEmail}, you will receive an OTP at that email address shortly.`
+        );
+        setForgotStep('reset');
+      } else {
+        setForgotError(response?.message || 'Failed to send OTP');
       }
-      setForgotStep('reset');
     } catch (err) {
       setForgotError(err.message || 'Failed to send OTP');
     } finally {
@@ -137,6 +213,9 @@ function Login() {
 
   return (
     <div className="fixed inset-0 z-[1] flex flex-col overflow-hidden overscroll-none bg-gradient-to-b from-sky-50/90 via-white to-sky-100/50">
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div className="absolute -right-24 -top-32 h-[28rem] w-[28rem] rounded-full bg-sky-400/25 blur-3xl" />
         <div className="absolute -left-32 top-1/3 h-[22rem] w-[22rem] rounded-full bg-blue-500/15 blur-3xl" />
@@ -167,12 +246,7 @@ function Login() {
             className="auth-left-ambient-orb pointer-events-none absolute -right-4 top-24 h-[420px] w-[420px] rounded-full bg-sky-500/10 blur-3xl"
             aria-hidden
           />
-          <span
-            className="pointer-events-none absolute bottom-8 right-2 select-none text-[11rem] font-black leading-none text-white/[0.04] xl:text-[13rem]"
-            aria-hidden
-          >
-            W
-          </span>
+          <BrandLogoWatermark className="absolute bottom-6 right-0 h-44 w-auto xl:h-52" />
 
           <div className="relative z-10 flex h-full min-h-0 flex-col overflow-hidden px-8 py-8 text-white shadow-2xl shadow-black/20 xl:px-11 xl:py-10">
             <header className="flex shrink-0 items-center gap-3.5">
@@ -182,10 +256,7 @@ function Login() {
                 </div>
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-70" aria-hidden>
                   <div className="auth-logo-orbit-ring--reverse h-[44px] w-[44px] rounded-full border border-dashed border-white/30 xl:h-[50px] xl:w-[50px]" />
-                </div>
-                <div className="auth-brand-logo-pulse relative z-10 flex h-11 w-11 items-center justify-center rounded-xl bg-white/12 text-base font-bold shadow-lg ring-1 ring-white/25 backdrop-blur-md xl:h-12 xl:w-12 xl:text-lg">
-                  W
-                </div>
+                </div><BrandLogoMark size="lg" className="auth-brand-logo-pulse relative z-10" />
               </div>
               <div className="min-w-0">
                 <p className="text-base font-bold tracking-tight xl:text-lg">Waabizx</p>
@@ -220,7 +291,7 @@ function Login() {
                   Secure access
                 </p>
                 <h2 className="text-xl font-bold leading-snug tracking-tight xl:text-3xl xl:leading-tight">
-                  Welcome back to your workspace
+                  Welcome to your workspace
                 </h2>
                 <p className="mt-2 text-xs leading-relaxed text-sky-100/88 xl:mt-3 xl:text-sm">
                   Campaigns, broadcast, inbox, and analytics — unified in one clean dashboard.
@@ -366,10 +437,10 @@ function Login() {
         <main className="flex h-full min-h-0 flex-col justify-center overflow-hidden px-4 py-6 sm:px-6 lg:px-10 xl:px-14">
           <div className="mx-auto w-full max-w-md shrink-0">
             <div className="mb-4 text-center lg:hidden">
-              <div className="mx-auto mb-2 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-lg font-bold text-white shadow-lg shadow-sky-600/35 ring-2 ring-white">
-                W
+              <div className="mx-auto mb-2 flex justify-center">
+                <BrandLogoMark size="lg" />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600/90">Waabizx</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600/90 dark:text-sky-400/90">Waabizx</p>
             </div>
 
             {!forgotOpen ? (
@@ -379,7 +450,7 @@ function Login() {
                 </p>
                 <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
                   <span className="bg-gradient-to-r from-gray-900 via-sky-800 to-gray-800 bg-clip-text text-transparent">
-                    Welcome back
+                    Welcome
                   </span>
                 </h1>
                 <p className="mt-1 text-xs text-gray-600 sm:text-sm">Use your work email to access the dashboard.</p>
@@ -472,8 +543,7 @@ function Login() {
                     <label htmlFor="password" className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-gray-500 sm:mb-2 sm:text-xs">
                       Password
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       id="password"
                       name="password"
                       value={formData.password}
@@ -485,7 +555,33 @@ function Login() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-end">
+                  <div className="rounded-xl border border-gray-200/90 bg-gray-50/70 px-3 py-2.5">
+                    <label className="flex items-start gap-2.5 text-[11px] leading-relaxed text-gray-600 sm:text-xs">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+                      />
+                      <span>
+                        By signing in, you agree to our{' '}
+                        <a
+                          href={TERMS_FILE_HREF}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.open(TERMS_FILE_HREF, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="font-semibold text-sky-700 hover:text-sky-800 underline underline-offset-2"
+                        >
+                          Terms of Service
+                        </a>.
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-end pt-0.5">
                     <button
                       type="button"
                       className="text-sm font-semibold text-sky-600 transition-colors hover:text-sky-800"
@@ -501,7 +597,7 @@ function Login() {
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !acceptedTerms}
                     className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/25 transition-all hover:from-sky-500 hover:to-blue-500 hover:shadow-xl active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none sm:min-h-[48px] sm:py-3.5"
                   >
                     {loading ? (
@@ -525,6 +621,7 @@ function Login() {
                         type="button"
                         className="text-sm font-semibold text-sky-600 transition-colors hover:text-sky-800"
                         onClick={() => {
+                          setForgotInfo('');
                           navigate('/login', { replace: true });
                         }}
                       >
@@ -538,6 +635,15 @@ function Login() {
                         role="alert"
                       >
                         {forgotError}
+                      </div>
+                    )}
+
+                    {forgotInfo && forgotStep === 'reset' && (
+                      <div
+                        className="mt-3 rounded-xl border border-emerald-200/90 bg-emerald-50/90 p-3 text-xs font-medium text-emerald-800 ring-1 ring-emerald-100/80 sm:p-4 sm:text-sm"
+                        role="status"
+                      >
+                        {forgotInfo}
                       </div>
                     )}
 
@@ -603,8 +709,7 @@ function Login() {
                           <label htmlFor="forgotNewPassword" className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-gray-500 sm:mb-2 sm:text-xs">
                             New password
                           </label>
-                          <input
-                            type="password"
+                          <PasswordInput
                             id="forgotNewPassword"
                             name="forgotNewPassword"
                             value={forgotNewPassword}
@@ -620,8 +725,7 @@ function Login() {
                           <label htmlFor="forgotConfirmPassword" className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-gray-500 sm:mb-2 sm:text-xs">
                             Confirm password
                           </label>
-                          <input
-                            type="password"
+                          <PasswordInput
                             id="forgotConfirmPassword"
                             name="forgotConfirmPassword"
                             value={forgotConfirmPassword}
@@ -657,13 +761,6 @@ function Login() {
                 )}
               </div>
             </div>
-            {!forgotOpen && (
-              <p className="mt-4 text-center text-[10px] leading-relaxed text-gray-500 sm:mt-5 sm:text-xs">
-                By signing in, you agree to our{' '}
-                <span className="font-medium text-gray-600">Terms of Service</span> and{' '}
-                <span className="font-medium text-gray-600">Privacy Policy</span>
-              </p>
-            )}
           </div>
         </main>
       </div>
